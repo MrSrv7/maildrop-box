@@ -1,7 +1,7 @@
 'use client'
 
 import { ThemeToggle } from "@/components/app/theme-toggle";
-import { Mail, Copy, ArrowRight } from "lucide-react";
+import { Mail, Clipboard, ArrowRight } from "lucide-react";
 import { useState } from "react";
 
 export default function Home() {
@@ -20,6 +20,16 @@ export default function Home() {
     const value = e.target.value;
     setEmail(value);
     validateEmail(value);
+  };
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setEmail(text);
+      validateEmail(text);
+    } catch (err) {
+      console.error('Failed to read clipboard contents: ', err);
+    }
   };
 
   const handleSubmit = () => {
@@ -71,8 +81,12 @@ export default function Home() {
                 className="flex-1 px-4 py-3 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none"
               />
               <div className="flex gap-2">
-                <button className="p-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors">
-                  <Copy className="w-5 h-5" />
+                <button 
+                  onClick={handlePaste}
+                  className="p-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
+                  title="Paste from clipboard"
+                >
+                  <Clipboard className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={handleSubmit}
