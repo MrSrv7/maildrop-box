@@ -204,7 +204,7 @@ export const ThemeToggle = React.memo(() => {
         <CurrentIcon 
           className={`h-6 w-6 transition-all duration-200 ${
             theme === 'light' 
-              ? 'text-amber-500' 
+              ? 'text-orange-600' 
               : theme === 'dark'
               ? 'text-blue-400'
               : 'text-gray-600 dark:text-gray-400'
@@ -242,7 +242,7 @@ export const ThemeToggle = React.memo(() => {
                   <Icon 
                     className={`h-4 w-4 ${
                       option.value === 'light' 
-                        ? 'text-amber-500' 
+                        ? 'text-orange-600' 
                         : option.value === 'dark'
                         ? 'text-blue-400'
                         : 'text-gray-500 dark:text-gray-400'
