@@ -21,6 +21,11 @@ export default function InboxPage({ params }: InboxPageProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState(0);
+  const [totalToDelete, setTotalToDelete] = useState(0);
+  const [cancelDeletion, setCancelDeletion] = useState(false);
 
   // Query for inbox data
   const { data: inboxData, loading: inboxLoading, error: inboxError, refetch: refetchInbox } = useQuery<InboxData>(
@@ -79,6 +84,58 @@ export default function InboxPage({ params }: InboxPageProps) {
   const cancelDeleteMessage = () => {
     setShowDeleteConfirm(false);
     setMessageToDelete(null);
+  };
+
+  const handleDeleteAll = () => {
+    if (!inboxData?.inbox?.length) return;
+    setShowDeleteAllConfirm(true);
+  };
+
+  const confirmDeleteAll = async () => {
+    if (!inboxData?.inbox?.length) return;
+    
+    setShowDeleteAllConfirm(false);
+    setIsDeleting(true);
+    setCancelDeletion(false);
+    setDeleteProgress(0);
+    setTotalToDelete(inboxData.inbox.length);
+    
+    const messages = [...inboxData.inbox];
+    
+    for (let i = 0; i < messages.length; i++) {
+      if (cancelDeletion) {
+        break;
+      }
+      
+      try {
+        await deleteMessage({
+          variables: {
+            mailbox: selectedMailbox,
+            id: messages[i].id,
+          },
+        });
+        setDeleteProgress(i + 1);
+        
+        // Small delay to show progress
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (error) {
+        console.error('Error deleting message:', error);
+        break;
+      }
+    }
+    
+    setIsDeleting(false);
+    setCancelDeletion(false);
+    setDeleteProgress(0);
+    setTotalToDelete(0);
+  };
+
+  const cancelDeleteAll = () => {
+    setShowDeleteAllConfirm(false);
+  };
+
+  const cancelDeletionProcess = () => {
+    setCancelDeletion(true);
   };
 
   const handleAddMailbox = () => {
@@ -257,13 +314,23 @@ export default function InboxPage({ params }: InboxPageProps) {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Inbox
               </h2>
-              <button
-                onClick={() => refetchInbox()}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                title="Refresh"
-              >
-                <RefreshCw className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => refetchInbox()}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                  title="Refresh"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleDeleteAll}
+                  disabled={!inboxData?.inbox?.length}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Delete all messages"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {selectedMailbox}@maildrop.cc
@@ -516,6 +583,90 @@ export default function InboxPage({ params }: InboxPageProps) {
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Confirmation Dialog */}
+      {showDeleteAllConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Delete All Messages
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Are you sure you want to delete all {inboxData?.inbox?.length || 0} emails in this inbox? 
+              This action is permanent and irreversible.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDeleteAll}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteAll}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+              >
+                Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Progress Dialog */}
+      {isDeleting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Deleting Messages
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {deleteProgress} of {totalToDelete} deleted
+                </p>
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="mb-6">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(deleteProgress / totalToDelete) * 100}%` }}
+                ></div>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+                Deleting email {deleteProgress + 1} of {totalToDelete}...
+              </p>
+            </div>
+            
+            <div className="flex justify-center">
+              <button
+                onClick={cancelDeletionProcess}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </div>
