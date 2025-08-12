@@ -2,7 +2,7 @@
 
 import { useState, use, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { Mail, RefreshCw, Trash2, Plus, Copy, Home, ArrowLeft } from 'lucide-react';
+import { Mail, RefreshCw, Trash2, Plus, Copy, ArrowLeft } from 'lucide-react';
 import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { useRouter } from 'next/navigation';
@@ -468,19 +468,16 @@ export default function InboxPage({ params }: InboxPageProps) {
             </button>
           )}
           
-          {/* Home button for mobile */}
           <button
             onClick={() => router.push('/')}
-            className="md:hidden p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             title="Go to homepage"
           >
-            <Home className="w-5 h-5" />
+            <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <span className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
+              Maildrop Box
+            </span>
           </button>
-          
-          <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <span className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Maildrop Box
-          </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Mobile Account Switcher */}
