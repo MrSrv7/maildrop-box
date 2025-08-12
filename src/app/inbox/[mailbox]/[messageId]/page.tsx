@@ -2,7 +2,7 @@
 
 import { use } from 'react';
 import { useQuery } from '@apollo/client';
-import { Mail, ArrowLeft, Trash2, Home } from 'lucide-react';
+import { Mail, ArrowLeft, Trash2 } from 'lucide-react';
 import { GET_MESSAGE, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { useRouter } from 'next/navigation';
@@ -85,6 +85,12 @@ export default function MessagePage({ params }: MessagePageProps) {
   const message = messageData?.message;
   const senderInfo = message ? parseHeaderFrom(message.headerfrom) : null;
 
+  const truncateSubject = (subject: string, maxLength: number = 6) => {
+    if (!subject) return 'Message';
+    if (subject.length <= maxLength) return subject;
+    return subject.substring(0, maxLength) + '...';
+  };
+
   return (
     <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
       {/* Header */}
@@ -97,15 +103,6 @@ export default function MessagePage({ params }: MessagePageProps) {
             title="Back to inbox"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
-          
-          {/* Home button */}
-          <button
-            onClick={() => router.push('/')}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-            title="Go to homepage"
-          >
-            <Home className="w-5 h-5" />
           </button>
           
           <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -135,7 +132,9 @@ export default function MessagePage({ params }: MessagePageProps) {
             {mailbox}@maildrop.cc
           </button>
           <span>/</span>
-          <span className="text-gray-900 dark:text-gray-100">Message</span>
+          <span className="text-gray-900 dark:text-gray-100">
+            {truncateSubject(message?.subject || '')}
+          </span>
         </div>
       </div>
 
