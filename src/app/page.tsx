@@ -75,7 +75,8 @@ export default function Home() {
           
           {/* Email Input Form */}
           <div className="max-w-lg mx-auto px-4">
-            <div className={`flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 sm:p-2 bg-gray-100 dark:bg-gray-800 rounded-lg border transition-colors ${
+            {/* Desktop Layout */}
+            <div className={`hidden sm:flex gap-3 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg border transition-colors ${
               error 
                 ? 'border-red-500 dark:border-red-400' 
                 : 'border-gray-200 dark:border-gray-700'
@@ -85,21 +86,53 @@ export default function Home() {
                 placeholder="Enter or paste email address..."
                 value={email}
                 onChange={handleInputChange}
-                className="flex-1 px-3 sm:px-4 py-3 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm min-h-[44px] sm:min-h-0"
+                className="flex-1 px-4 py-3 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm"
               />
-              <div className="flex gap-2 justify-center">
+              <div className="flex gap-2">
                 <button 
                   onClick={handlePaste}
-                  className="w-16 sm:flex-none p-2 sm:p-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors min-h-[36px] sm:min-h-[44px] flex items-center justify-center"
+                  className="flex-none p-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors min-h-[44px] flex items-center justify-center"
                   title="Paste from clipboard"
                 >
-                  <Clipboard className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Clipboard className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={handleSubmit}
-                  className="w-16 sm:flex-none p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors min-h-[36px] sm:min-h-[44px] flex items-center justify-center"
+                  className="flex-none p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors min-h-[44px] flex items-center justify-center"
                 >
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="sm:hidden space-y-3">
+              <div className={`p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border transition-colors ${
+                error 
+                  ? 'border-red-500 dark:border-red-400' 
+                  : 'border-gray-200 dark:border-gray-700'
+              }`}>
+                <input
+                  type="text"
+                  placeholder="Enter or paste email address..."
+                  value={email}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm"
+                />
+              </div>
+              <div className="flex gap-2 justify-center">
+                <button 
+                  onClick={handlePaste}
+                  className="p-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center border border-gray-200 dark:border-gray-700"
+                  title="Paste from clipboard"
+                >
+                  <Clipboard className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={handleSubmit}
+                  className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
