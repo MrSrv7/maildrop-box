@@ -2,7 +2,7 @@
 
 import { useState, use } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { Mail, RefreshCw, Trash2, Plus, MoreVertical } from 'lucide-react';
+import { Mail, RefreshCw, Trash2, Plus } from 'lucide-react';
 import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 
@@ -85,6 +85,46 @@ export default function InboxPage({ params }: InboxPageProps) {
     }
   };
 
+  const getRelativeTime = (dateString: string) => {
+    try {
+      const messageDate = new Date(dateString);
+      const now = new Date();
+      const diffInMs = now.getTime() - messageDate.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+      if (diffInMinutes < 1) {
+        return "just now";
+      } else if (diffInMinutes < 60) {
+        return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
+      } else if (diffInHours < 24) {
+        return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
+      } else {
+        return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
+      }
+    } catch {
+      return "";
+    }
+  };
+
+  const parseHeaderFrom = (headerFrom: string) => {
+    // Parse "Display Name <email@domain.com>" format
+    const match = headerFrom.match(/^(.*?)\s*<(.+)>$/);
+    if (match) {
+      return {
+        name: match[1].trim().replace(/^"(.*)"$/, '$1'), // Remove quotes if present
+        email: match[2].trim()
+      };
+    }
+    
+    // If no match, treat the whole string as email
+    return {
+      name: '',
+      email: headerFrom.trim()
+    };
+  };
+
   return (
     <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
       {/* Header */}
@@ -121,9 +161,6 @@ export default function InboxPage({ params }: InboxPageProps) {
                   }`}
                 >
                   <div className="font-medium">{mailbox}@maildrop.cc</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {inboxData?.inbox?.length || 0} messages
-                  </div>
                 </button>
               ))}
             </div>
@@ -190,9 +227,9 @@ export default function InboxPage({ params }: InboxPageProps) {
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {selectedMailbox}@maildrop.cc
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {inboxData?.inbox?.length || 0} messages
-            </p>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -219,29 +256,42 @@ export default function InboxPage({ params }: InboxPageProps) {
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {inboxData.inbox.map((message) => (
-                  <button
-                    key={message.id}
-                    onClick={() => setSelectedMessage(message)}
-                    className={`w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                      selectedMessage?.id === message.id
-                        ? 'bg-blue-50 dark:bg-blue-900/20 border-r-2 border-blue-500'
-                        : ''
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="font-medium text-gray-900 dark:text-gray-100 truncate pr-2">
-                        {message.headerfrom}
+                {inboxData.inbox.map((message) => {
+                  const senderInfo = parseHeaderFrom(message.headerfrom);
+                  return (
+                    <button
+                      key={message.id}
+                      onClick={() => setSelectedMessage(message)}
+                      className={`w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                        selectedMessage?.id === message.id
+                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-r-2 border-blue-500'
+                          : ''
+                      }`}
+                    >
+                      {/* First row: Sender's name */}
+                      <div className="font-medium text-gray-900 dark:text-gray-100 truncate mb-1">
+                        {senderInfo.name || senderInfo.email}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {formatDate(message.date)}
+                      
+                      {/* Second row: Sender's email address (if name exists) */}
+                      {senderInfo.name && (
+                        <div className="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">
+                          {senderInfo.email}
+                        </div>
+                      )}
+                      
+                      {/* Third row: Date and time */}
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        {formatDate(message.date)} ({getRelativeTime(message.date)})
                       </div>
-                    </div>
-                    <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
-                      {message.subject}
-                    </div>
-                  </button>
-                ))}
+                      
+                      {/* Fourth row: Subject */}
+                      <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                        {message.subject}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -264,14 +314,11 @@ export default function InboxPage({ params }: InboxPageProps) {
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
-                    <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
                   </div>
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   <div>From: {selectedMessage.headerfrom}</div>
-                  <div>Date: {formatDate(selectedMessage.date)}</div>
+                  <div>Date: {formatDate(selectedMessage.date)} ({getRelativeTime(selectedMessage.date)})</div>
                 </div>
               </div>
 
@@ -311,20 +358,38 @@ export default function InboxPage({ params }: InboxPageProps) {
                     </p>
                     {inboxData?.inbox?.length ? (
                       <div className="space-y-2 max-w-md mx-auto">
-                        {inboxData.inbox.slice(0, 3).map((message) => (
-                          <button
-                            key={message.id}
-                            onClick={() => setSelectedMessage(message)}
-                            className="w-full text-left p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                          >
-                            <div className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                              {message.headerfrom}
-                            </div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                              {message.subject}
-                            </div>
-                          </button>
-                        ))}
+                        {inboxData.inbox.slice(0, 3).map((message) => {
+                          const senderInfo = parseHeaderFrom(message.headerfrom);
+                          return (
+                            <button
+                              key={message.id}
+                              onClick={() => setSelectedMessage(message)}
+                              className="w-full text-left p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            >
+                              {/* First row: Sender's name */}
+                              <div className="font-medium text-gray-900 dark:text-gray-100 truncate mb-1">
+                                {senderInfo.name || senderInfo.email}
+                              </div>
+                              
+                              {/* Second row: Sender's email address (if name exists) */}
+                              {senderInfo.name && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">
+                                  {senderInfo.email}
+                                </div>
+                              )}
+                              
+                              {/* Third row: Date and time */}
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                                {formatDate(message.date)} ({getRelativeTime(message.date)})
+                              </div>
+                              
+                              {/* Fourth row: Subject */}
+                              <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                                {message.subject}
+                              </div>
+                            </button>
+                          );
+                        })}
                         {inboxData.inbox.length > 3 && (
                           <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
                             +{inboxData.inbox.length - 3} more messages
