@@ -2,6 +2,7 @@
 
 import { ThemeToggle } from "@/components/app/theme-toggle";
 import { Footer } from "@/components/app/footer";
+import { TypewriterSection } from "@/components/app/typewriter-section";
 import { Mail, Clipboard, ArrowRight, Zap, Shield, Eye, Monitor } from "lucide-react";
 import { useState } from "react";
 
@@ -55,7 +56,7 @@ export default function Home() {
       </header>
       
       {/* Hero Section */}
-      <main className="flex items-center justify-center px-6 py-16">
+      <main className="flex items-center justify-center px-6 py-8 pb-2">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
             Temporary Email,{" "}
@@ -110,6 +111,9 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Typewriter Section */}
+      <TypewriterSection />
 
       {/* About This Project Section */}
       <section className="bg-gray-50 dark:bg-gray-800 py-16 px-6">

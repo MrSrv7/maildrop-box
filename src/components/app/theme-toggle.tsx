@@ -37,45 +37,6 @@ const THEME_OPTIONS: ThemeOption[] = [
   },
 ]
 
-/**
- * ThemeToggle Component
- * 
- * A modern, accessible theme toggle component that provides a dropdown interface
- * for switching between light, dark, and system themes. Features smooth animations,
- * keyboard navigation, and proper accessibility attributes.
- * 
- * @example
- * ```tsx
- * // Basic usage in a navbar
- * import { ThemeToggle } from '@/components/app/theme-toggle'
- * 
- * export function Navbar() {
- *   return (
- *     <nav className="flex items-center justify-between p-4">
- *       <div>Your Logo</div>
- *       <ThemeToggle />
- *     </nav>
- *   )
- * }
- * ```
- * 
- * @example
- * ```tsx
- * // Usage in a settings panel
- * import { ThemeToggle } from '@/components/app/theme-toggle'
- * 
- * export function SettingsPanel() {
- *   return (
- *     <div className="space-y-4">
- *       <div className="flex items-center justify-between">
- *         <span>Theme Preference</span>
- *         <ThemeToggle />
- *       </div>
- *     </div>
- *   )
- * }
- * ```
- */
 export const ThemeToggle = React.memo(() => {
   const { theme, setTheme } = useTheme()
   const [isOpen, setIsOpen] = useState(false)
