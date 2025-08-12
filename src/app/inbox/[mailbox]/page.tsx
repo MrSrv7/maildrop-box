@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, use } from 'react';
+import { useState, use, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { Mail, RefreshCw, Trash2, Plus } from 'lucide-react';
+import { Mail, RefreshCw, Trash2, Plus, Copy } from 'lucide-react';
 import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
+import { useRouter } from 'next/navigation';
 
 interface InboxPageProps {
   params: Promise<{
@@ -14,6 +15,7 @@ interface InboxPageProps {
 
 export default function InboxPage({ params }: InboxPageProps) {
   const resolvedParams = use(params);
+  const router = useRouter();
   const [selectedMailbox, setSelectedMailbox] = useState<string>(resolvedParams.mailbox || 'example');
   const [selectedMessage, setSelectedMessage] = useState<EmailMessage | null>(null);
   const [mailboxes, setMailboxes] = useState<string[]>([resolvedParams.mailbox || 'example']);
@@ -26,6 +28,80 @@ export default function InboxPage({ params }: InboxPageProps) {
   const [deleteProgress, setDeleteProgress] = useState(0);
   const [totalToDelete, setTotalToDelete] = useState(0);
   const [cancelDeletion, setCancelDeletion] = useState(false);
+  const [showAccountDeleteConfirm, setShowAccountDeleteConfirm] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
+  
+  // New state for smart refresh management
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+  const [displayedEmails, setDisplayedEmails] = useState<EmailMessage[]>([]);
+  const lastFetchRef = useRef<EmailMessage[]>([]);
+  const isInitializedRef = useRef(false);
+
+  // Local storage key
+  const MAILBOXES_STORAGE_KEY = 'maildrop-mailboxes';
+  const MAX_MAILBOXES = 10;
+
+  // Initialize mailboxes from localStorage only once on mount
+  useEffect(() => {
+    // Only run on client side and only once
+    if (typeof window === 'undefined' || isInitializedRef.current) return;
+    
+    isInitializedRef.current = true;
+    const currentMailbox = resolvedParams.mailbox || 'example';
+    console.log('🏁 Initializing mailboxes for:', currentMailbox);
+    
+    try {
+      const savedMailboxes = localStorage.getItem(MAILBOXES_STORAGE_KEY);
+      if (savedMailboxes) {
+        const parsed = JSON.parse(savedMailboxes);
+        console.log('📦 Found saved mailboxes:', parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // If current mailbox is not in saved list, add it
+          if (!parsed.includes(currentMailbox)) {
+            const updatedMailboxes = [currentMailbox, ...parsed].slice(0, MAX_MAILBOXES);
+            console.log('➕ Adding current mailbox to saved list:', updatedMailboxes);
+            setMailboxes(updatedMailboxes);
+            localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(updatedMailboxes));
+          } else {
+            console.log('✅ Current mailbox already in list, using saved:', parsed);
+            setMailboxes(parsed);
+          }
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing saved mailboxes:', error);
+    }
+    
+    // If no valid saved data, initialize with current mailbox
+    const initialMailboxes = [currentMailbox];
+    console.log('🆕 No saved data, initializing with:', initialMailboxes);
+    setMailboxes(initialMailboxes);
+    localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(initialMailboxes));
+  }, [resolvedParams.mailbox]);
+
+  // Add current mailbox to the list if it's not already there (when navigating to a new mailbox via URL)
+  useEffect(() => {
+    if (!isInitializedRef.current || mailboxes.length === 0) return; // Wait for initialization
+    
+    const currentMailbox = resolvedParams.mailbox || 'example';
+    if (!mailboxes.includes(currentMailbox)) {
+      const updatedMailboxes = [currentMailbox, ...mailboxes].slice(0, MAX_MAILBOXES);
+      setMailboxes(updatedMailboxes);
+    }
+  }, [resolvedParams.mailbox, mailboxes]);
+
+  // Update selectedMailbox when URL changes
+  useEffect(() => {
+    setSelectedMailbox(resolvedParams.mailbox || 'example');
+  }, [resolvedParams.mailbox]);
+
+  // Save mailboxes to localStorage whenever mailboxes change (but only after initialization)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isInitializedRef.current || mailboxes.length === 0) return;
+    console.log('💾 Saving mailboxes to localStorage:', mailboxes);
+    localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(mailboxes));
+  }, [mailboxes]);
 
   // Query for inbox data
   const { data: inboxData, loading: inboxLoading, error: inboxError, refetch: refetchInbox } = useQuery<InboxData>(
@@ -35,8 +111,52 @@ export default function InboxPage({ params }: InboxPageProps) {
       pollInterval: 30000, // Poll every 30 seconds
       errorPolicy: 'all',
       notifyOnNetworkStatusChange: true,
+      fetchPolicy: 'cache-and-network', // Ensure we get loading states
     }
   );
+
+  // Effect to handle smart email updates (programmatic vs manual refresh)
+  useEffect(() => {
+    console.log('📧 Email effect triggered - inboxData:', !!inboxData?.inbox, 'isManualRefresh:', isManualRefresh, 'displayedEmails.length:', displayedEmails.length);
+    
+    if (inboxData?.inbox) {
+      const newEmails = inboxData.inbox;
+      
+      // Check if this is the first load or a manual refresh
+      if (displayedEmails.length === 0 || isManualRefresh) {
+        console.log('🔄 Handling manual refresh or first load');
+        // First load or manual refresh - replace all emails
+        setDisplayedEmails(newEmails);
+        
+        // Add a small delay before hiding the skeleton to ensure it's visible
+        if (isManualRefresh) {
+          console.log('⏱️ Setting timeout to hide skeleton in 500ms');
+          setTimeout(() => {
+            console.log('✅ Hiding skeleton after timeout');
+            setIsManualRefresh(false);
+          }, 500); // Show skeleton for at least 500ms
+        }
+      } else {
+        // Programmatic refresh - append only new emails
+        const existingIds = new Set(displayedEmails.map(email => email.id));
+        const newEmailsToAdd = newEmails.filter(email => !existingIds.has(email.id));
+        
+        if (newEmailsToAdd.length > 0) {
+          console.log('📬 Adding new emails:', newEmailsToAdd.length);
+          // Add new emails to the beginning of the list (most recent first)
+          setDisplayedEmails(prev => [...newEmailsToAdd, ...prev]);
+        }
+      }
+      
+      lastFetchRef.current = newEmails;
+    }
+  }, [inboxData?.inbox, isManualRefresh, displayedEmails]);
+
+  // Reset displayed emails when mailbox changes
+  useEffect(() => {
+    setDisplayedEmails([]);
+    setSelectedMessage(null);
+  }, [selectedMailbox]);
 
   // Query for selected message details
   const { data: messageData, loading: messageLoading } = useQuery<MessageData>(
@@ -73,6 +193,9 @@ export default function InboxPage({ params }: InboxPageProps) {
           id: messageToDelete,
         },
       });
+      
+      // Remove the deleted message from displayed emails immediately
+      setDisplayedEmails(prev => prev.filter(email => email.id !== messageToDelete));
     } catch (error) {
       console.error('Error deleting message:', error);
     } finally {
@@ -87,20 +210,20 @@ export default function InboxPage({ params }: InboxPageProps) {
   };
 
   const handleDeleteAll = () => {
-    if (!inboxData?.inbox?.length) return;
+    if (!displayedEmails?.length) return;
     setShowDeleteAllConfirm(true);
   };
 
   const confirmDeleteAll = async () => {
-    if (!inboxData?.inbox?.length) return;
+    if (!displayedEmails?.length) return;
     
     setShowDeleteAllConfirm(false);
     setIsDeleting(true);
     setCancelDeletion(false);
     setDeleteProgress(0);
-    setTotalToDelete(inboxData.inbox.length);
+    setTotalToDelete(displayedEmails.length);
     
-    const messages = [...inboxData.inbox];
+    const messages = [...displayedEmails];
     
     for (let i = 0; i < messages.length; i++) {
       if (cancelDeletion) {
@@ -114,6 +237,9 @@ export default function InboxPage({ params }: InboxPageProps) {
             id: messages[i].id,
           },
         });
+        
+        // Remove the deleted message from displayed emails immediately
+        setDisplayedEmails(prev => prev.filter(email => email.id !== messages[i].id));
         setDeleteProgress(i + 1);
         
         // Small delay to show progress
@@ -139,16 +265,86 @@ export default function InboxPage({ params }: InboxPageProps) {
   };
 
   const handleAddMailbox = () => {
-    if (newMailbox.trim() && !mailboxes.includes(newMailbox.trim())) {
-      setMailboxes([...mailboxes, newMailbox.trim()]);
+    const trimmedMailbox = newMailbox.trim();
+    console.log('➕ Adding new mailbox:', trimmedMailbox, 'Current mailboxes:', mailboxes);
+    if (trimmedMailbox && !mailboxes.includes(trimmedMailbox) && mailboxes.length < MAX_MAILBOXES) {
+      const updatedMailboxes = [trimmedMailbox, ...mailboxes];
+      console.log('📝 Updated mailboxes will be:', updatedMailboxes);
+      setMailboxes(updatedMailboxes);
       setNewMailbox('');
       setShowAddForm(false);
+      
+      // Navigate to the new mailbox immediately
+      router.push(`/inbox/${trimmedMailbox}`);
     }
   };
 
   const handleSelectMailbox = (mailbox: string) => {
-    setSelectedMailbox(mailbox);
-    setSelectedMessage(null);
+    // Only navigate if it's a different mailbox
+    if (mailbox !== selectedMailbox) {
+      setSelectedMailbox(mailbox);
+      setSelectedMessage(null);
+      router.push(`/inbox/${mailbox}`);
+    }
+  };
+
+  const handleDeleteAccount = (mailbox: string) => {
+    setAccountToDelete(mailbox);
+    setShowAccountDeleteConfirm(true);
+  };
+
+  const confirmDeleteAccount = () => {
+    if (!accountToDelete) return;
+    
+    const updatedMailboxes = mailboxes.filter(mb => mb !== accountToDelete);
+    setMailboxes(updatedMailboxes);
+    
+    // If the deleted mailbox was the current one, switch to the first available
+    if (accountToDelete === selectedMailbox && updatedMailboxes.length > 0) {
+      router.push(`/inbox/${updatedMailboxes[0]}`);
+    }
+    
+    setShowAccountDeleteConfirm(false);
+    setAccountToDelete(null);
+  };
+
+  const cancelDeleteAccount = () => {
+    setShowAccountDeleteConfirm(false);
+    setAccountToDelete(null);
+  };
+
+  const handleManualRefresh = () => {
+    console.log('🔄 Manual refresh triggered');
+    setIsManualRefresh(true);
+    refetchInbox();
+  };
+
+  // Copy functions
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // You could add a toast notification here if you have one
+      console.log('📋 Copied to clipboard:', text);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const handleCopyEmail = (mailbox: string) => {
+    const emailAddress = `${mailbox}@maildrop.cc`;
+    copyToClipboard(emailAddress);
+  };
+
+  const handleCopyCurrentEmail = () => {
+    const emailAddress = `${selectedMailbox}@maildrop.cc`;
+    copyToClipboard(emailAddress);
   };
 
   const formatDate = (dateString: string) => {
@@ -223,6 +419,22 @@ export default function InboxPage({ params }: InboxPageProps) {
     return text.substring(0, cutPosition + 1) + '...';
   };
 
+  // Skeleton loading component for inbox
+  const InboxSkeleton = () => (
+    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+      {[...Array(5)].map((_, index) => (
+        <div key={index} className="p-4 animate-pulse">
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
       {/* Header */}
@@ -243,23 +455,54 @@ export default function InboxPage({ params }: InboxPageProps) {
         {/* Left Panel - Mailboxes */}
         <div className="w-80 md:flex hidden border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-col">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Email Addresses</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Accounts</h2>
           </div>
           
           <div className="flex-1 overflow-y-auto">
             <div className="p-2">
               {mailboxes.map((mailbox) => (
-                <button
+                <div
                   key={mailbox}
-                  onClick={() => handleSelectMailbox(mailbox)}
-                  className={`w-full text-left p-3 rounded-lg mb-2 transition-colors ${
+                  className={`flex items-start w-full rounded-lg mb-2 transition-colors ${
                     selectedMailbox === mailbox
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      ? 'bg-blue-100 dark:bg-blue-900/30'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <div className="font-medium">{mailbox}@maildrop.cc</div>
-                </button>
+                  <button
+                    onClick={() => handleSelectMailbox(mailbox)}
+                    className={`flex-1 text-left p-3 transition-colors ${
+                      selectedMailbox === mailbox
+                        ? 'text-blue-700 dark:text-blue-300'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <div className="font-medium break-all leading-tight max-w-full">
+                      {mailbox}
+                    </div>
+                  </button>
+                  
+                  {/* Copy email button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyEmail(mailbox);
+                    }}
+                    className="p-2 m-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors flex-shrink-0 self-start"
+                    title="Copy email address"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Delete account button */}
+                  <button
+                    onClick={() => handleDeleteAccount(mailbox)}
+                    className="p-2 m-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors flex-shrink-0 self-start"
+                    title="Remove account"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -280,7 +523,8 @@ export default function InboxPage({ params }: InboxPageProps) {
                 <div className="flex gap-2">
                   <button
                     onClick={handleAddMailbox}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    disabled={!newMailbox.trim() || mailboxes.includes(newMailbox.trim()) || mailboxes.length >= MAX_MAILBOXES}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Add
                   </button>
@@ -298,11 +542,17 @@ export default function InboxPage({ params }: InboxPageProps) {
             ) : (
               <button
                 onClick={() => setShowAddForm(true)}
-                className="w-full flex items-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                disabled={mailboxes.length >= MAX_MAILBOXES}
+                className="w-full flex items-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-5 h-5" />
-                Add New Address
+                {mailboxes.length >= MAX_MAILBOXES ? 'Maximum accounts reached' : 'Add New Address'}
               </button>
+            )}
+            {mailboxes.length >= MAX_MAILBOXES && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                You can have up to {MAX_MAILBOXES} accounts
+              </p>
             )}
           </div>
         </div>
@@ -316,15 +566,23 @@ export default function InboxPage({ params }: InboxPageProps) {
               </h2>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => refetchInbox()}
+                  onClick={handleCopyCurrentEmail}
                   className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                  title="Copy email address"
+                >
+                  <Copy className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleManualRefresh}
+                  disabled={inboxLoading && isManualRefresh}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Refresh"
                 >
-                  <RefreshCw className="w-5 h-5" />
+                  <RefreshCw className={`w-5 h-5 ${inboxLoading && isManualRefresh ? 'animate-spin' : ''}`} />
                 </button>
                 <button
                   onClick={handleDeleteAll}
-                  disabled={!inboxData?.inbox?.length}
+                  disabled={!displayedEmails?.length}
                   className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Delete all messages"
                 >
@@ -336,15 +594,13 @@ export default function InboxPage({ params }: InboxPageProps) {
               {selectedMailbox}@maildrop.cc
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {inboxData?.inbox?.length || 0} messages
+              {displayedEmails?.length || 0} messages
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {inboxLoading ? (
-              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                Loading messages...
-              </div>
+            {(inboxLoading && isManualRefresh) ? (
+              <InboxSkeleton />
             ) : inboxError ? (
               <div className="p-4 text-center">
                 <div className="text-red-500 mb-2">Error loading messages</div>
@@ -352,19 +608,19 @@ export default function InboxPage({ params }: InboxPageProps) {
                   {inboxError.message}
                 </div>
                 <button
-                  onClick={() => refetchInbox()}
+                  onClick={handleManualRefresh}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Retry
                 </button>
               </div>
-            ) : !inboxData?.inbox?.length ? (
+            ) : !displayedEmails?.length ? (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                No messages in this inbox
+                {inboxLoading ? 'Loading messages...' : 'No messages in this inbox'}
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {inboxData.inbox.map((message) => {
+                {displayedEmails.map((message) => {
                   const senderInfo = parseHeaderFrom(message.headerfrom);
                   return (
                     <div
@@ -478,11 +734,11 @@ export default function InboxPage({ params }: InboxPageProps) {
                   <p className="text-lg mb-4">Welcome to {selectedMailbox}@maildrop.cc</p>
                   <div className="space-y-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {inboxData?.inbox?.length || 0} messages in inbox
+                      {displayedEmails?.length || 0} messages in inbox
                     </p>
-                    {inboxData?.inbox?.length ? (
+                    {displayedEmails?.length ? (
                       <div className="space-y-2 max-w-md mx-auto">
-                        {inboxData.inbox.slice(0, 3).map((message) => {
+                        {displayedEmails.slice(0, 3).map((message) => {
                           const senderInfo = parseHeaderFrom(message.headerfrom);
                           return (
                             <div
@@ -530,9 +786,9 @@ export default function InboxPage({ params }: InboxPageProps) {
                             </div>
                           );
                         })}
-                        {inboxData.inbox.length > 3 && (
+                        {displayedEmails.length > 3 && (
                           <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                            +{inboxData.inbox.length - 3} more messages
+                            +{displayedEmails.length - 3} more messages
                           </p>
                         )}
                       </div>
@@ -608,7 +864,7 @@ export default function InboxPage({ params }: InboxPageProps) {
             </div>
             
             <p className="text-gray-700 dark:text-gray-300 mb-6">
-              Are you sure you want to delete all {inboxData?.inbox?.length || 0} emails in this inbox? 
+              Are you sure you want to delete all {displayedEmails?.length || 0} emails in this inbox? 
               This action is permanent and irreversible.
             </p>
             
@@ -667,6 +923,48 @@ export default function InboxPage({ params }: InboxPageProps) {
                 className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Account Delete Confirmation Dialog */}
+      {showAccountDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Remove Account
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This will remove the account from your list only
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Are you sure you want to remove <strong>{accountToDelete}@maildrop.cc</strong> from your accounts list? 
+              This will only remove it from the UI and will NOT delete any email messages permanently. 
+              You can add it back anytime.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDeleteAccount}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteAccount}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition-colors"
+              >
+                Remove Account
               </button>
             </div>
           </div>

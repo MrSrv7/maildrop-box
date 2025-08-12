@@ -48,7 +48,7 @@ export const TypewriterSection = () => {
   }, [displayedText, currentTextIndex, isTyping, isDeleting]);
 
   return (
-    <section className="py-8 pt=1 px-6 bg-white dark:bg-gray-900">
+    <section className="py-8 pt-1 px-6 bg-white dark:bg-gray-900">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl md:text-5xl font-bold leading-tight">
           <span className="text-gray-900 dark:text-gray-100">Stop spam from</span>
