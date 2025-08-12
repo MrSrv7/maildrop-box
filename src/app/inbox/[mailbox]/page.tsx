@@ -682,11 +682,38 @@ export default function InboxPage({ params }: InboxPageProps) {
           {selectedMessage ? (
             <>
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex justify-between items-start mb-2">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {selectedMessage.subject}
-                  </h2>
-                  <div className="flex items-center gap-2">
+                <div className="flex justify-between items-center">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      {selectedMessage.subject}
+                    </h2>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                      {(() => {
+                        const senderInfo = parseHeaderFrom(selectedMessage.headerfrom);
+                        return (
+                          <>
+                            {/* Sender's name */}
+                            {senderInfo.name && (
+                              <div className="font-medium text-gray-900 dark:text-gray-100">
+                                {senderInfo.name}
+                              </div>
+                            )}
+                            
+                            {/* Sender's email address */}
+                            <div className="text-gray-600 dark:text-gray-400">
+                              {senderInfo.email}
+                            </div>
+                            
+                            {/* Date and time */}
+                            <div className="text-gray-500 dark:text-gray-400">
+                              {formatDate(selectedMessage.date)} ({getRelativeTime(selectedMessage.date)})
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
                     <button
                       onClick={() => handleDeleteMessage(selectedMessage.id)}
                       className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
@@ -695,10 +722,6 @@ export default function InboxPage({ params }: InboxPageProps) {
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  <div>From: {selectedMessage.headerfrom}</div>
-                  <div>Date: {formatDate(selectedMessage.date)} ({getRelativeTime(selectedMessage.date)})</div>
                 </div>
               </div>
 
