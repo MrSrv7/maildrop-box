@@ -19,6 +19,8 @@ export default function InboxPage({ params }: InboxPageProps) {
   const [mailboxes, setMailboxes] = useState<string[]>([resolvedParams.mailbox || 'example']);
   const [newMailbox, setNewMailbox] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
 
   // Query for inbox data
   const { data: inboxData, loading: inboxLoading, error: inboxError, refetch: refetchInbox } = useQuery<InboxData>(
@@ -52,16 +54,31 @@ export default function InboxPage({ params }: InboxPageProps) {
   });
 
   const handleDeleteMessage = async (messageId: string) => {
+    setMessageToDelete(messageId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteMessage = async () => {
+    if (!messageToDelete) return;
+    
     try {
       await deleteMessage({
         variables: {
           mailbox: selectedMailbox,
-          id: messageId,
+          id: messageToDelete,
         },
       });
     } catch (error) {
       console.error('Error deleting message:', error);
+    } finally {
+      setShowDeleteConfirm(false);
+      setMessageToDelete(null);
     }
+  };
+
+  const cancelDeleteMessage = () => {
+    setShowDeleteConfirm(false);
+    setMessageToDelete(null);
   };
 
   const handleAddMailbox = () => {
@@ -123,6 +140,30 @@ export default function InboxPage({ params }: InboxPageProps) {
       name: '',
       email: headerFrom.trim()
     };
+  };
+
+  const truncateText = (text: string, maxLength: number = 30) => {
+    // Remove spaces for counting but keep them in display
+    const textWithoutSpaces = text.replace(/\s/g, '');
+    if (textWithoutSpaces.length <= maxLength) {
+      return text;
+    }
+    
+    // Find the position where we should cut, considering spaces
+    let charCount = 0;
+    let cutPosition = 0;
+    
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] !== ' ') {
+        charCount++;
+      }
+      if (charCount >= maxLength) {
+        cutPosition = i;
+        break;
+      }
+    }
+    
+    return text.substring(0, cutPosition + 1) + '...';
   };
 
   return (
@@ -259,37 +300,53 @@ export default function InboxPage({ params }: InboxPageProps) {
                 {inboxData.inbox.map((message) => {
                   const senderInfo = parseHeaderFrom(message.headerfrom);
                   return (
-                    <button
+                    <div
                       key={message.id}
-                      onClick={() => setSelectedMessage(message)}
-                      className={`w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                      className={`flex items-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                         selectedMessage?.id === message.id
                           ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-r-2 border-blue-500'
                           : ''
                       }`}
                     >
-                      {/* First row: Sender's name */}
-                      <div className="font-medium text-gray-900 dark:text-gray-100 truncate mb-1">
-                        {senderInfo.name || senderInfo.email}
-                      </div>
-                      
-                      {/* Second row: Sender's email address (if name exists) */}
-                      {senderInfo.name && (
-                        <div className="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">
-                          {senderInfo.email}
+                      <button
+                        onClick={() => setSelectedMessage(message)}
+                        className="flex-1 text-left p-4"
+                      >
+                        {/* First row: Sender's name */}
+                        <div className="font-medium text-gray-900 dark:text-gray-100 truncate mb-1">
+                          {truncateText(senderInfo.name || senderInfo.email)}
                         </div>
-                      )}
+                        
+                        {/* Second row: Sender's email address (if name exists) */}
+                        {senderInfo.name && (
+                          <div className="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">
+                            {senderInfo.email}
+                          </div>
+                        )}
+                        
+                        {/* Third row: Date and time */}
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          {formatDate(message.date)} ({getRelativeTime(message.date)})
+                        </div>
+                        
+                        {/* Fourth row: Subject */}
+                        <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                          {truncateText(message.subject)}
+                        </div>
+                      </button>
                       
-                      {/* Third row: Date and time */}
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                        {formatDate(message.date)} ({getRelativeTime(message.date)})
-                      </div>
-                      
-                      {/* Fourth row: Subject */}
-                      <div className="text-sm text-gray-700 dark:text-gray-300 truncate">
-                        {message.subject}
-                      </div>
-                    </button>
+                      {/* Delete button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMessage(message.id);
+                        }}
+                        className="p-3 m-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                        title="Delete message"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -361,33 +418,49 @@ export default function InboxPage({ params }: InboxPageProps) {
                         {inboxData.inbox.slice(0, 3).map((message) => {
                           const senderInfo = parseHeaderFrom(message.headerfrom);
                           return (
-                            <button
+                            <div
                               key={message.id}
-                              onClick={() => setSelectedMessage(message)}
-                              className="w-full text-left p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                              className="flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                             >
-                              {/* First row: Sender's name */}
-                              <div className="font-medium text-gray-900 dark:text-gray-100 truncate mb-1">
-                                {senderInfo.name || senderInfo.email}
-                              </div>
-                              
-                              {/* Second row: Sender's email address (if name exists) */}
-                              {senderInfo.name && (
-                                <div className="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">
-                                  {senderInfo.email}
+                              <button
+                                onClick={() => setSelectedMessage(message)}
+                                className="flex-1 text-left p-3"
+                              >
+                                {/* First row: Sender's name */}
+                                <div className="font-medium text-gray-900 dark:text-gray-100 truncate mb-1">
+                                  {truncateText(senderInfo.name || senderInfo.email)}
                                 </div>
-                              )}
+                                
+                                {/* Second row: Sender's email address (if name exists) */}
+                                {senderInfo.name && (
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">
+                                    {senderInfo.email}
+                                  </div>
+                                )}
+                                
+                                {/* Third row: Date and time */}
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                                  {formatDate(message.date)} ({getRelativeTime(message.date)})
+                                </div>
+                                
+                                {/* Fourth row: Subject */}
+                                <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                                  {truncateText(message.subject)}
+                                </div>
+                              </button>
                               
-                              {/* Third row: Date and time */}
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                {formatDate(message.date)} ({getRelativeTime(message.date)})
-                              </div>
-                              
-                              {/* Fourth row: Subject */}
-                              <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                                {message.subject}
-                              </div>
-                            </button>
+                              {/* Delete button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMessage(message.id);
+                                }}
+                                className="p-3 m-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                                title="Delete message"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           );
                         })}
                         {inboxData.inbox.length > 3 && (
@@ -408,6 +481,46 @@ export default function InboxPage({ params }: InboxPageProps) {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Delete Message
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Are you sure you want to delete this email? This action is permanent and irreversible.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDeleteMessage}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteMessage}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
