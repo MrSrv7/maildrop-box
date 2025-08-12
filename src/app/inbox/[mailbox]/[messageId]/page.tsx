@@ -224,13 +224,36 @@ export default function MessagePage({ params }: MessagePageProps) {
             {/* Message Content */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               {message.html ? (
-                <div 
-                  className="prose dark:prose-invert max-w-none prose-sm sm:prose-base"
-                  dangerouslySetInnerHTML={{ __html: message.html }}
-                />
+                <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
+                  <div 
+                    style={{ 
+                      color: '#000000',
+                      backgroundColor: '#ffffff',
+                      minHeight: '200px',
+                      padding: '16px',
+                      fontFamily: 'inherit',
+                      fontSize: 'inherit',
+                      lineHeight: 'inherit'
+                    }}
+                    dangerouslySetInnerHTML={{ __html: message.html }} 
+                  />
+                </div>
               ) : message.data ? (
-                <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 text-sm sm:text-base font-mono">
-                  {message.data}
+                <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
+                  <pre 
+                    style={{ 
+                      color: '#000000',
+                      backgroundColor: '#ffffff',
+                      fontFamily: 'Monaco, Consolas, monospace',
+                      fontSize: '13px',
+                      lineHeight: '1.5',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      margin: 0
+                    }}
+                  >
+                    {message.data}
+                  </pre>
                 </div>
               ) : (
                 <div className="text-gray-500 dark:text-gray-400 text-center py-8">

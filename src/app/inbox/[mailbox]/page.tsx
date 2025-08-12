@@ -776,13 +776,36 @@ export default function InboxPage({ params }: InboxPageProps) {
                     Loading message content...
                   </div>
                 ) : messageData?.message?.html ? (
-                  <div 
-                    className="prose dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: messageData.message.html }}
-                  />
+                  <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
+                    <div 
+                      style={{ 
+                        color: '#000000',
+                        backgroundColor: '#ffffff',
+                        minHeight: '200px',
+                        padding: '16px',
+                        fontFamily: 'inherit',
+                        fontSize: 'inherit',
+                        lineHeight: 'inherit'
+                      }}
+                      dangerouslySetInnerHTML={{ __html: messageData.message.html }}
+                    />
+                  </div>
                 ) : messageData?.message?.data ? (
-                  <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100">
-                    {messageData.message.data}
+                  <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
+                    <pre 
+                      style={{ 
+                        color: '#000000',
+                        backgroundColor: '#ffffff',
+                        fontFamily: 'Monaco, Consolas, monospace',
+                        fontSize: '13px',
+                        lineHeight: '1.5',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        margin: 0
+                      }}
+                    >
+                      {messageData.message.data}
+                    </pre>
                   </div>
                 ) : (
                   <div className="text-gray-500 dark:text-gray-400">
