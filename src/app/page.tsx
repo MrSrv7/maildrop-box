@@ -39,7 +39,12 @@ export default function Home() {
       setError("Please use a maildrop.cc address");
       return;
     }
-    // Handle submit logic here
+    
+    if (email) {
+      // Extract username from email or use as-is if it's just a username
+      const username = email.includes('@') ? email.split('@')[0] : email;
+      window.location.href = `/inbox/${username}`;
+    }
   };
 
   return (

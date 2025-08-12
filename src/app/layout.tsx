@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppThemeProvider } from "@/components/providers/theme-provider";
+import { GraphQLProvider } from "@/components/providers/graphql-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +31,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AppThemeProvider>
-          {children}
+          <GraphQLProvider>
+            {children}
+          </GraphQLProvider>
         </AppThemeProvider>
       </body>
     </html>

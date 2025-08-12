@@ -10,7 +10,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@apollo/client": "^3.13.9",
     "autoprefixer": "^10.4.16",
+    "graphql": "^16.11.0",
     "lucide-react": "^0.539.0",
     "next": "15.4.6",
     "next-themes": "^0.4.6",
