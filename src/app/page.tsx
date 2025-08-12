@@ -1,6 +1,7 @@
 'use client'
 
 import { ThemeToggle } from "@/components/app/theme-toggle";
+import { Footer } from "@/components/app/footer";
 import { Mail, Clipboard, ArrowRight, Zap, Shield, Eye, Monitor } from "lucide-react";
 import { useState } from "react";
 
@@ -190,6 +191,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+      
+      <Footer />
     </div>
   );
 }
