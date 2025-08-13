@@ -7,6 +7,7 @@ import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, Messag
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { Button } from '@/components/base/button';
 import { Input } from '@/components/base/input';
+import { LoadingSpinner } from '@/components/base/loading-spinner';
 import { useRouter } from 'next/navigation';
 
 interface InboxPageProps {
@@ -673,7 +674,11 @@ export default function InboxPage({ params }: InboxPageProps) {
               </div>
             ) : !displayedEmails?.length ? (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                {inboxLoading ? 'Loading messages...' : 'No messages in this inbox'}
+                {inboxLoading ? (
+                  <LoadingSpinner text="Loading messages..." />
+                ) : (
+                  'No messages in this inbox'
+                )}
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -785,7 +790,7 @@ export default function InboxPage({ params }: InboxPageProps) {
               <div className="flex-1 overflow-y-auto p-4">
                 {messageLoading ? (
                   <div className="text-center text-gray-500 dark:text-gray-400">
-                    Loading message content...
+                    <LoadingSpinner text="Loading message content..." />
                   </div>
                 ) : messageData?.message?.html ? (
                   <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
@@ -896,7 +901,11 @@ export default function InboxPage({ params }: InboxPageProps) {
               </div>
             ) : !displayedEmails?.length ? (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                {inboxLoading ? 'Loading messages...' : 'No messages in this inbox'}
+                {inboxLoading ? (
+                  <LoadingSpinner text="Loading messages..." />
+                ) : (
+                  'No messages in this inbox'
+                )}
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">

@@ -6,6 +6,7 @@ import { Mail, ArrowLeft, Trash2 } from 'lucide-react';
 import { GET_MESSAGE, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { Button } from '@/components/base/button';
+import { LoadingSpinner } from '@/components/base/loading-spinner';
 import { useRouter } from 'next/navigation';
 
 interface MessagePageProps {
@@ -147,7 +148,7 @@ export default function MessagePage({ params }: MessagePageProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-gray-500 dark:text-gray-400">
               <Mail className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p>Loading message...</p>
+              <LoadingSpinner size="lg" text="Loading message..." />
             </div>
           </div>
         ) : messageError ? (
