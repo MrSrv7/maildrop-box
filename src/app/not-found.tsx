@@ -2,6 +2,7 @@
 
 import { ThemeToggle } from "@/components/app/theme-toggle";
 import { Footer } from "@/components/app/footer";
+import { Button } from "@/components/base/button";
 import { Mail, Home, MailX, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -80,13 +81,14 @@ export default function NotFound() {
               Home
             </Link>
             
-            <button
+            <Button
               onClick={() => window.history.back()}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+              variant="secondary"
+              leftIcon={ArrowLeft}
+              size="lg"
             >
-              <ArrowLeft className="w-4 h-4" />
               Go Back
-            </button>
+            </Button>
           </div>
         </div>
       </main>

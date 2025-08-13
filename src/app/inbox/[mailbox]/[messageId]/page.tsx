@@ -5,6 +5,7 @@ import { useQuery } from '@apollo/client';
 import { Mail, ArrowLeft, Trash2 } from 'lucide-react';
 import { GET_MESSAGE, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
+import { Button } from '@/components/base/button';
 import { useRouter } from 'next/navigation';
 
 interface MessagePageProps {
@@ -97,13 +98,13 @@ export default function MessagePage({ params }: MessagePageProps) {
       <header className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
           {/* Back button */}
-          <button
+          <Button
             onClick={() => router.push(`/inbox/${mailbox}`)}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+            variant="ghost"
+            icon={ArrowLeft}
+            size="icon-sm"
             title="Back to inbox"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          />
           
           <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           <span className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -118,19 +119,21 @@ export default function MessagePage({ params }: MessagePageProps) {
       {/* Breadcrumbs */}
       <div className="px-4 sm:px-6 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <button
+          <Button
             onClick={() => router.push('/')}
-            className="hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            variant="link"
+            size="sm"
           >
             Home
-          </button>
+          </Button>
           <span>/</span>
-          <button
+          <Button
             onClick={() => router.push(`/inbox/${mailbox}`)}
-            className="hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            variant="link"
+            size="sm"
           >
             {mailbox}@maildrop.cc
-          </button>
+          </Button>
           <span>/</span>
           <span className="text-gray-900 dark:text-gray-100">
             {truncateSubject(message?.subject || '')}

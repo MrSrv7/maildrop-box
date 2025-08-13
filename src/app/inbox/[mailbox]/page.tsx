@@ -5,6 +5,7 @@ import { useQuery, useMutation } from '@apollo/client';
 import { Mail, RefreshCw, Trash2, Plus, Copy, ArrowLeft } from 'lucide-react';
 import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
+import { Button } from '@/components/base/button';
 import { useRouter } from 'next/navigation';
 
 interface InboxPageProps {
@@ -459,13 +460,14 @@ export default function InboxPage({ params }: InboxPageProps) {
         <div className="flex items-center gap-2">
           {/* Mobile back button */}
           {selectedMessage && (
-            <button
+            <Button
               onClick={() => setSelectedMessage(null)}
-              className="md:hidden p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+              variant="ghost"
+              icon={ArrowLeft}
+              size="icon-sm"
+              className="md:hidden"
               title="Back to inbox"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+            />
           )}
           
           <button
@@ -482,13 +484,15 @@ export default function InboxPage({ params }: InboxPageProps) {
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Mobile Account Switcher */}
           <div className="md:hidden">
-            <button
+            <Button
               onClick={() => setShowMobileAccountModal(true)}
-              className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-medium hover:bg-blue-700 transition-colors"
+              variant="primary"
+              size="icon-sm"
+              className="w-8 h-8 rounded-full text-sm font-medium"
               title="Switch account"
             >
               {selectedMailbox.charAt(0).toUpperCase()}
-            </button>
+            </Button>
           </div>
           
           <ThemeToggle />
@@ -566,33 +570,39 @@ export default function InboxPage({ params }: InboxPageProps) {
                   autoFocus
                 />
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     onClick={handleAddMailbox}
                     disabled={!newMailbox.trim() || mailboxes.includes(newMailbox.trim()) || mailboxes.length >= MAX_MAILBOXES}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    variant="primary"
+                    size="sm"
+                    fullWidth
                   >
                     Add
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       setShowAddForm(false);
                       setNewMailbox('');
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    variant="outline"
+                    size="sm"
+                    fullWidth
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <button
+              <Button
                 onClick={() => setShowAddForm(true)}
                 disabled={mailboxes.length >= MAX_MAILBOXES}
-                className="w-full flex items-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="ghost"
+                leftIcon={Plus}
+                fullWidth
+                className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
               >
-                <Plus className="w-5 h-5" />
                 {mailboxes.length >= MAX_MAILBOXES ? 'Maximum accounts reached' : 'Add New Address'}
-              </button>
+              </Button>
             )}
             {mailboxes.length >= MAX_MAILBOXES && (
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
@@ -610,29 +620,30 @@ export default function InboxPage({ params }: InboxPageProps) {
                 Inbox
               </h2>
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   onClick={handleCopyCurrentEmail}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                  variant="ghost"
+                  icon={Copy}
+                  size="icon"
                   title="Copy email address"
-                >
-                  <Copy className="w-5 h-5" />
-                </button>
-                <button
+                />
+                <Button
                   onClick={handleManualRefresh}
                   disabled={inboxLoading && isManualRefresh}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="ghost"
+                  icon={RefreshCw}
+                  size="icon"
+                  className={`${inboxLoading && isManualRefresh ? '[&_svg]:animate-spin' : ''}`}
                   title="Refresh"
-                >
-                  <RefreshCw className={`w-5 h-5 ${inboxLoading && isManualRefresh ? 'animate-spin' : ''}`} />
-                </button>
-                <button
+                />
+                <Button
                   onClick={handleDeleteAll}
                   disabled={!displayedEmails?.length}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="danger-ghost"
+                  icon={Trash2}
+                  size="icon"
                   title="Delete all messages"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                />
               </div>
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -832,29 +843,30 @@ export default function InboxPage({ params }: InboxPageProps) {
                 Inbox
               </h2>
               <div className="flex flex-row gap-2">
-                <button
+                <Button
                   onClick={handleCopyCurrentEmail}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                  variant="ghost"
+                  icon={Copy}
+                  size="icon"
                   title="Copy email address"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-                <button
+                />
+                <Button
                   onClick={handleManualRefresh}
                   disabled={inboxLoading && isManualRefresh}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="ghost"
+                  icon={RefreshCw}
+                  size="icon"
+                  className={`${inboxLoading && isManualRefresh ? '[&_svg]:animate-spin' : ''}`}
                   title="Refresh"
-                >
-                  <RefreshCw className={`w-4 h-4 ${inboxLoading && isManualRefresh ? 'animate-spin' : ''}`} />
-                </button>
-                <button
+                />
+                <Button
                   onClick={handleDeleteAll}
                   disabled={!displayedEmails?.length}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="danger-ghost"
+                  icon={Trash2}
+                  size="icon"
                   title="Delete all"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                />
               </div>
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">

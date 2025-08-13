@@ -3,6 +3,7 @@
 import { ThemeToggle } from "@/components/app/theme-toggle";
 import { Footer } from "@/components/app/footer";
 import { TypewriterSection } from "@/components/app/typewriter-section";
+import { Button } from "@/components/base/button";
 import { Mail, Clipboard, ArrowRight, Zap, Shield, Eye, Monitor } from "lucide-react";
 import { useState } from "react";
 
@@ -89,19 +90,19 @@ export default function Home() {
                 className="flex-1 px-4 py-3 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm"
               />
               <div className="flex gap-2">
-                <button 
+                <Button 
                   onClick={handlePaste}
-                  className="flex-none p-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors min-h-[44px] flex items-center justify-center"
+                  variant="ghost"
+                  icon={Clipboard}
+                  size="icon"
                   title="Paste from clipboard"
-                >
-                  <Clipboard className="w-5 h-5" />
-                </button>
-                <button 
+                />
+                <Button 
                   onClick={handleSubmit}
-                  className="flex-none p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors min-h-[44px] flex items-center justify-center"
-                >
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+                  variant="primary"
+                  icon={ArrowRight}
+                  size="icon"
+                />
               </div>
             </div>
 
@@ -121,19 +122,19 @@ export default function Home() {
                 />
               </div>
               <div className="flex gap-2 justify-center">
-                <button 
+                <Button 
                   onClick={handlePaste}
-                  className="p-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center border border-gray-200 dark:border-gray-700"
+                  variant="outline"
+                  icon={Clipboard}
+                  size="icon"
                   title="Paste from clipboard"
-                >
-                  <Clipboard className="w-4 h-4" />
-                </button>
-                <button 
+                />
+                <Button 
                   onClick={handleSubmit}
-                  className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center"
-                >
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                  variant="primary"
+                  icon={ArrowRight}
+                  size="icon"
+                />
               </div>
             </div>
             
