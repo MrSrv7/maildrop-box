@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/app/theme-toggle";
 import { Footer } from "@/components/app/footer";
 import { TypewriterSection } from "@/components/app/typewriter-section";
 import { Button } from "@/components/base/button";
+import { Input } from "@/components/base/input";
 import { Mail, Clipboard, ArrowRight, Zap, Shield, Eye, Monitor } from "lucide-react";
 import { useState } from "react";
 
@@ -77,19 +78,18 @@ export default function Home() {
           {/* Email Input Form */}
           <div className="max-w-lg mx-auto px-4">
             {/* Desktop Layout */}
-            <div className={`hidden sm:flex gap-3 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg border transition-colors ${
-              error 
-                ? 'border-red-500 dark:border-red-400' 
-                : 'border-gray-200 dark:border-gray-700'
-            }`}>
-              <input
-                type="text"
-                placeholder="Enter or paste email address..."
-                value={email}
-                onChange={handleInputChange}
-                className="flex-1 px-4 py-3 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm"
-              />
-              <div className="flex gap-2">
+            <div className="hidden sm:block">
+              <div className="flex gap-3">
+                <Input
+                  type="text"
+                  placeholder="Enter or paste email address..."
+                  value={email}
+                  onChange={handleInputChange}
+                  variant={error ? 'error' : 'default'}
+                  error={error}
+                  fullWidth
+                  className="flex-1"
+                />
                 <Button 
                   onClick={handlePaste}
                   variant="ghost"
@@ -108,19 +108,15 @@ export default function Home() {
 
             {/* Mobile Layout */}
             <div className="sm:hidden space-y-3">
-              <div className={`p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border transition-colors ${
-                error 
-                  ? 'border-red-500 dark:border-red-400' 
-                  : 'border-gray-200 dark:border-gray-700'
-              }`}>
-                <input
-                  type="text"
-                  placeholder="Enter or paste email address..."
-                  value={email}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm"
-                />
-              </div>
+              <Input
+                type="text"
+                placeholder="Enter or paste email address..."
+                value={email}
+                onChange={handleInputChange}
+                variant={error ? 'error' : 'default'}
+                error={error}
+                fullWidth
+              />
               <div className="flex gap-2 justify-center">
                 <Button 
                   onClick={handlePaste}
@@ -141,12 +137,6 @@ export default function Home() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 px-2">
               Enter a username (e.g. &quot;example&quot;) or a full email address ending in @maildrop.cc
             </p>
-            
-            {error && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-2 font-medium px-2">
-                {error}
-              </p>
-            )}
           </div>
         </div>
       </main>

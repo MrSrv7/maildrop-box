@@ -6,6 +6,7 @@ import { Mail, RefreshCw, Trash2, Plus, Copy, ArrowLeft } from 'lucide-react';
 import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { Button } from '@/components/base/button';
+import { Input } from '@/components/base/input';
 import { useRouter } from 'next/navigation';
 
 interface InboxPageProps {
@@ -560,14 +561,14 @@ export default function InboxPage({ params }: InboxPageProps) {
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             {showAddForm ? (
               <div className="space-y-2">
-                <input
+                <Input
                   type="text"
                   placeholder="Enter username..."
                   value={newMailbox}
                   onChange={(e) => setNewMailbox(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   onKeyPress={(e) => e.key === 'Enter' && handleAddMailbox()}
                   autoFocus
+                  fullWidth
                 />
                 <div className="flex gap-2">
                   <Button
@@ -1050,14 +1051,14 @@ export default function InboxPage({ params }: InboxPageProps) {
             <div className="p-4 border-t border-gray-200 dark:border-gray-700">
               {showAddForm ? (
                 <div className="space-y-3">
-                  <input
+                  <Input
                     type="text"
                     placeholder="Enter username..."
                     value={newMailbox}
                     onChange={(e) => setNewMailbox(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     onKeyPress={(e) => e.key === 'Enter' && handleAddMailbox()}
                     autoFocus
+                    fullWidth
                   />
                   <div className="flex gap-2">
                     <button
