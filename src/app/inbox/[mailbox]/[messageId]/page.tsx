@@ -6,7 +6,7 @@ import { Mail, ArrowLeft, Trash2 } from 'lucide-react';
 import { GET_MESSAGE, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { Button } from '@/components/base/button';
-import { LoadingSpinner } from '@/components/base/loading-spinner';
+import { SkeletonText } from '@/components/base/skeleton-loader';
 import { useRouter } from 'next/navigation';
 
 interface MessagePageProps {
@@ -84,6 +84,30 @@ export default function MessagePage({ params }: MessagePageProps) {
     router.push(`/inbox/${mailbox}`);
   };
 
+  // Skeleton component for message detail page loading
+  const MessageDetailSkeleton = () => (
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Message header skeleton */}
+        <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-sm dark:bg-gray-800 dark:border-gray-600">
+          <div className="space-y-4">
+            <SkeletonText size="lg" width="70%" />
+            <div className="flex items-center space-x-4">
+              <SkeletonText size="md" width="30%" />
+              <SkeletonText size="sm" width="20%" />
+            </div>
+            <SkeletonText size="sm" width="40%" />
+          </div>
+        </div>
+        
+        {/* Message content skeleton */}
+        <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-sm dark:bg-gray-800 dark:border-gray-600">
+          <SkeletonText lines={12} spacing="md" randomize />
+        </div>
+      </div>
+    </div>
+  );
+
   const message = messageData?.message;
   const senderInfo = message ? parseHeaderFrom(message.headerfrom) : null;
 
@@ -145,12 +169,7 @@ export default function MessagePage({ params }: MessagePageProps) {
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         {messageLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500 dark:text-gray-400">
-              <Mail className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <LoadingSpinner size="lg" text="Loading message..." />
-            </div>
-          </div>
+          <MessageDetailSkeleton />
         ) : messageError ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">

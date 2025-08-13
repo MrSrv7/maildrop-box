@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/app/theme-toggle';
 import { Button } from '@/components/base/button';
 import { Input } from '@/components/base/input';
 import { LoadingSpinner } from '@/components/base/loading-spinner';
+import { SkeletonCard, SkeletonText } from '@/components/base/skeleton-loader';
 import { useRouter } from 'next/navigation';
 
 interface InboxPageProps {
@@ -439,19 +440,30 @@ export default function InboxPage({ params }: InboxPageProps) {
     return text.substring(0, cutPosition + 1) + '...';
   };
 
-  // Skeleton loading component for inbox
+  // Skeleton loading component for inbox using the reusable SkeletonCard
   const InboxSkeleton = () => (
     <div className="divide-y divide-gray-200 dark:divide-gray-700">
-      {[...Array(5)].map((_, index) => (
-        <div key={index} className="p-4 animate-pulse">
-          <div className="space-y-2">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-          </div>
-        </div>
+      {Array.from({ length: 5 }, (_, index) => (
+        <SkeletonCard
+          key={index}
+          titleLines={1}
+          contentLines={3}
+          className="border-0 rounded-none"
+        />
       ))}
+    </div>
+  );
+
+  // Skeleton loading component for message content
+  const MessageSkeleton = () => (
+    <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm dark:bg-gray-800 dark:border-gray-600">
+      <div className="space-y-4">
+        <SkeletonText lines={2} spacing="sm" size="lg" randomize />
+        <SkeletonText lines={1} spacing="sm" size="md" width="60%" />
+        <div className="border-t border-gray-200 dark:border-gray-600 pt-4 mt-4">
+          <SkeletonText lines={8} spacing="md" size="sm" randomize />
+        </div>
+      </div>
     </div>
   );
 
@@ -789,9 +801,7 @@ export default function InboxPage({ params }: InboxPageProps) {
 
               <div className="flex-1 overflow-y-auto p-4">
                 {messageLoading ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400">
-                    <LoadingSpinner text="Loading message content..." />
-                  </div>
+                  <MessageSkeleton />
                 ) : messageData?.message?.html ? (
                   <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm">
                     <div 
