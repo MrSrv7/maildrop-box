@@ -5,11 +5,7 @@ import { useQuery, useMutation } from '@apollo/client';
 import { Mail, RefreshCw, Trash2, Plus, Copy, ArrowLeft } from 'lucide-react';
 import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
-import { Button } from '@/components/base/button';
-import { Input } from '@/components/base/input';
-import { LoadingSpinner } from '@/components/base/loading-spinner';
-import { SkeletonCard, SkeletonText } from '@/components/base/skeleton-loader';
-import { ErrorBoundary } from '@/components/base/error-boundary';
+import { Button, Input, LoadingSpinner, SkeletonCard, SkeletonText, ErrorBoundary, Modal } from '@/components';
 import { useRouter } from 'next/navigation';
 
 interface InboxPageProps {
@@ -985,315 +981,269 @@ export default function InboxPage({ params }: InboxPageProps) {
       </div>
 
       {/* Mobile Account Switcher Modal */}
-      {showMobileAccountModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md max-h-[80vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Switch Account
-                </h3>
-                <button
-                  onClick={() => setShowMobileAccountModal(false)}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            
-            {/* Accounts List */}
-            <div className="p-4 max-h-96 overflow-y-auto">
-              <div className="space-y-2">
-                {mailboxes.map((mailbox) => (
-                  <div
-                    key={mailbox}
-                    className={`flex items-center rounded-lg border transition-colors ${
-                      selectedMailbox === mailbox
-                        ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700'
-                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    {/* Avatar */}
-                    <div className="p-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ${
-                        selectedMailbox === mailbox ? 'bg-blue-600' : 'bg-gray-500'
-                      }`}>
-                        {mailbox.charAt(0).toUpperCase()}
-                      </div>
-                    </div>
-                    
-                    {/* Account Info */}
-                    <button
-                      onClick={() => {
-                        handleSelectMailbox(mailbox);
-                        setShowMobileAccountModal(false);
-                      }}
-                      className={`flex-1 text-left p-3 transition-colors ${
-                        selectedMailbox === mailbox
-                          ? 'text-blue-700 dark:text-blue-300'
-                          : 'text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      <div className="font-medium break-all leading-tight">
-                        {mailbox}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        @maildrop.cc
-                      </div>
-                    </button>
-                    
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 p-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCopyEmail(mailbox);
-                        }}
-                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                        title="Copy email"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                      
-                      {mailboxes.length > 1 && (
-                        <button
-                          onClick={() => {
-                            handleDeleteAccount(mailbox);
-                            if (mailboxes.length === 1) {
-                              setShowMobileAccountModal(false);
-                            }
-                          }}
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                          title="Delete account"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* Add New Account Section */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              {showAddForm ? (
-                <div className="space-y-3">
-                  <Input
-                    type="text"
-                    placeholder="Enter username..."
-                    value={newMailbox}
-                    onChange={(e) => setNewMailbox(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddMailbox()}
-                    autoFocus
-                    fullWidth
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleAddMailbox}
-                      disabled={!newMailbox.trim() || mailboxes.includes(newMailbox.trim()) || mailboxes.length >= MAX_MAILBOXES}
-                      className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Add Account
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowAddForm(false);
-                        setNewMailbox('');
-                      }}
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Cancel
-                    </button>
+      <Modal
+        isOpen={showMobileAccountModal}
+        onClose={() => setShowMobileAccountModal(false)}
+        title="Switch Account"
+        size="md"
+        className="max-w-md"
+      >
+        <div className="max-h-96 overflow-y-auto">
+          <div className="space-y-2">
+            {mailboxes.map((mailbox) => (
+              <div
+                key={mailbox}
+                className={`flex items-center rounded-lg border transition-colors ${
+                  selectedMailbox === mailbox
+                    ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700'
+                    : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
+                }`}
+              >
+                {/* Avatar */}
+                <div className="p-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ${
+                    selectedMailbox === mailbox ? 'bg-blue-600' : 'bg-gray-500'
+                  }`}>
+                    {mailbox.charAt(0).toUpperCase()}
                   </div>
                 </div>
-              ) : (
+                
+                {/* Account Info */}
                 <button
-                  onClick={() => setShowAddForm(true)}
-                  disabled={mailboxes.length >= MAX_MAILBOXES}
-                  className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    handleSelectMailbox(mailbox);
+                    setShowMobileAccountModal(false);
+                  }}
+                  className={`flex-1 text-left p-3 transition-colors ${
+                    selectedMailbox === mailbox
+                      ? 'text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}
                 >
-                  <Plus className="w-5 h-5" />
-                  {mailboxes.length >= MAX_MAILBOXES ? 'Maximum accounts reached' : 'Add New Account'}
+                  <div className="font-medium break-all leading-tight">
+                    {mailbox}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    @maildrop.cc
+                  </div>
                 </button>
-              )}
-              {mailboxes.length >= MAX_MAILBOXES && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                  You can have up to {MAX_MAILBOXES} accounts
-                </p>
-              )}
-            </div>
+                
+                {/* Actions */}
+                <div className="flex items-center gap-1 p-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyEmail(mailbox);
+                    }}
+                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                    title="Copy email"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                  
+                  {mailboxes.length > 1 && (
+                    <button
+                      onClick={() => {
+                        handleDeleteAccount(mailbox);
+                        if (mailboxes.length === 1) {
+                          setShowMobileAccountModal(false);
+                        }
+                      }}
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                      title="Delete account"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      )}
+        
+        {/* Add New Account Section */}
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          {showAddForm ? (
+            <div className="space-y-3">
+              <Input
+                type="text"
+                placeholder="Enter username..."
+                value={newMailbox}
+                onChange={(e) => setNewMailbox(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddMailbox()}
+                autoFocus
+                fullWidth
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddMailbox}
+                  disabled={!newMailbox.trim() || mailboxes.includes(newMailbox.trim()) || mailboxes.length >= MAX_MAILBOXES}
+                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add Account
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewMailbox('');
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAddForm(true)}
+              disabled={mailboxes.length >= MAX_MAILBOXES}
+              className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-5 h-5" />
+              {mailboxes.length >= MAX_MAILBOXES ? 'Maximum accounts reached' : 'Add New Account'}
+            </button>
+          )}
+          {mailboxes.length >= MAX_MAILBOXES && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+              You can have up to {MAX_MAILBOXES} accounts
+            </p>
+          )}
+        </div>
+      </Modal>
 
       {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Delete Message
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  This action cannot be undone
-                </p>
-              </div>
-            </div>
-            
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              Are you sure you want to delete this email? This action is permanent and irreversible.
-            </p>
-            
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={cancelDeleteMessage}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteMessage}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
-              >
-                Delete
-              </button>
-            </div>
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={cancelDeleteMessage}
+        title="Delete Message"
+        variant="danger"
+        icon={Trash2}
+        size="sm"
+        footer={
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={cancelDeleteMessage}
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDeleteMessage}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+            >
+              Delete
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p className="text-gray-700 dark:text-gray-300">
+          Are you sure you want to delete this email? This action is permanent and irreversible.
+        </p>
+      </Modal>
 
       {/* Delete All Confirmation Dialog */}
-      {showDeleteAllConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Delete All Messages
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  This action cannot be undone
-                </p>
-              </div>
-            </div>
-            
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              Are you sure you want to delete all {displayedEmails?.length || 0} emails in this inbox? 
-              This action is permanent and irreversible.
-            </p>
-            
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={cancelDeleteAll}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteAll}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
-              >
-                Delete All
-              </button>
-            </div>
+      <Modal
+        isOpen={showDeleteAllConfirm}
+        onClose={cancelDeleteAll}
+        title="Delete All Messages"
+        variant="danger"
+        icon={Trash2}
+        size="sm"
+        footer={
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={cancelDeleteAll}
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDeleteAll}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+            >
+              Delete All
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p className="text-gray-700 dark:text-gray-300">
+          Are you sure you want to delete all {displayedEmails?.length || 0} emails in this inbox? 
+          This action is permanent and irreversible.
+        </p>
+      </Modal>
 
       {/* Delete Progress Dialog */}
-      {isDeleting && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Deleting Messages
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {deleteProgress} of {totalToDelete} deleted
-                </p>
-              </div>
+      <Modal
+        isOpen={isDeleting}
+        onClose={() => {}} // Prevent closing during deletion
+        title="Deleting Messages"
+        icon={Trash2}
+        size="sm"
+        closeOnBackdropClick={false}
+        closeOnEscape={false}
+        showCloseButton={false}
+        footer={
+          <div className="flex justify-center">
+            <button
+              onClick={cancelDeletionProcess}
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {deleteProgress} of {totalToDelete} deleted
+          </p>
+          
+          {/* Progress Bar */}
+          <div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(deleteProgress / totalToDelete) * 100}%` }}
+              ></div>
             </div>
-            
-            {/* Progress Bar */}
-            <div className="mb-6">
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(deleteProgress / totalToDelete) * 100}%` }}
-                ></div>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
-                Deleting email {deleteProgress + 1} of {totalToDelete}...
-              </p>
-            </div>
-            
-            <div className="flex justify-center">
-              <button
-                onClick={cancelDeletionProcess}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+              Deleting email {deleteProgress + 1} of {totalToDelete}...
+            </p>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Account Delete Confirmation Dialog */}
-      {showAccountDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Remove Account
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  This will remove the account from your list only
-                </p>
-              </div>
-            </div>
-            
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              Are you sure you want to remove <strong>{accountToDelete}@maildrop.cc</strong> from your accounts list? 
-              This will only remove it from the UI and will NOT delete any email messages permanently. 
-              You can add it back anytime.
-            </p>
-            
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={cancelDeleteAccount}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteAccount}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition-colors"
-              >
-                Remove Account
-              </button>
-            </div>
+      <Modal
+        isOpen={showAccountDeleteConfirm}
+        onClose={cancelDeleteAccount}
+        title="Remove Account"
+        variant="warning"
+        icon={Trash2}
+        size="sm"
+        footer={
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={cancelDeleteAccount}
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDeleteAccount}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition-colors"
+            >
+              Remove Account
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p className="text-gray-700 dark:text-gray-300">
+          Are you sure you want to remove <strong>{accountToDelete}@maildrop.cc</strong> from your accounts list? 
+          This will only remove it from the UI and will NOT delete any email messages permanently. 
+          You can add it back anytime.
+        </p>
+      </Modal>
       </div>
     </ErrorBoundary>
   );
