@@ -1,7 +1,6 @@
 'use client'
 
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/app/footer";
+import { Header } from "@/components/layout";
 import { TypewriterSection } from "@/components/app/typewriter-section";
 import { Button } from "@/components/base/button";
 import { Input } from "@/components/base/input";
@@ -236,8 +235,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
-      <Footer />
     </div>
   );
 }

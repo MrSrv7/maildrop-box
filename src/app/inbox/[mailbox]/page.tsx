@@ -4,7 +4,7 @@ import { useState, use, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { Mail, RefreshCw, Trash2, Plus, Copy } from 'lucide-react';
 import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, MessageData } from '@/lib/graphql-queries';
-import { Header } from '@/components/layout/header';
+import { Header } from '@/components/layout';
 import { Button, Input, LoadingSpinner, SkeletonCard, SkeletonText, ErrorBoundary, Modal } from '@/components';
 import { useRouter } from 'next/navigation';
 

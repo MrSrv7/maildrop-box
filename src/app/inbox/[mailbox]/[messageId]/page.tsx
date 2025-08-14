@@ -4,7 +4,7 @@ import { use, useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { Mail, Trash2, Copy, Plus } from 'lucide-react';
 import { GET_MESSAGE, MessageData } from '@/lib/graphql-queries';
-import { Header } from '@/components/layout/header';
+import { Header } from '@/components/layout';
 import { Input, Modal } from '@/components/base';
 import { SkeletonText } from '@/components/base/skeleton-loader';
 import { ErrorBoundary } from '@/components/base/error-boundary';

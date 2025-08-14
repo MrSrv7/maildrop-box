@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { AppThemeProvider } from "@/components/providers/theme-provider";
 import { GraphQLProvider } from "@/components/providers/graphql-provider";
 import { ErrorBoundary } from "@/components/base/error-boundary";
+import { Footer } from "@/components/layout/footer";
 
 interface LayoutWrapperProps {
   children: ReactNode;
@@ -23,7 +24,12 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     >
       <AppThemeProvider>
         <GraphQLProvider>
-          {children}
+          <div className="min-h-screen flex flex-col">
+            <div className="flex-1">
+              {children}
+            </div>
+            <Footer />
+          </div>
         </GraphQLProvider>
       </AppThemeProvider>
     </ErrorBoundary>

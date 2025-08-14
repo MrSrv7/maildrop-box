@@ -1,7 +1,6 @@
 'use client'
 
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/app/footer";
+import { Header } from "@/components/layout";
 import { Button } from "@/components/base/button";
 import { Mail, Home, MailX, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -112,8 +111,6 @@ export default function NotFound() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
