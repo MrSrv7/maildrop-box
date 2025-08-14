@@ -9,6 +9,7 @@ import { Button } from '@/components/base/button';
 import { Input } from '@/components/base/input';
 import { LoadingSpinner } from '@/components/base/loading-spinner';
 import { SkeletonCard, SkeletonText } from '@/components/base/skeleton-loader';
+import { ErrorBoundary } from '@/components/base/error-boundary';
 import { useRouter } from 'next/navigation';
 
 interface InboxPageProps {
@@ -468,7 +469,17 @@ export default function InboxPage({ params }: InboxPageProps) {
   );
 
   return (
-    <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
+    <ErrorBoundary
+      variant="card"
+      size="lg"
+      errorIcon={Mail}
+      errorTitle="Inbox Error"
+      errorMessage="Unable to load the inbox. Please try refreshing or check your internet connection."
+      showRetry={true}
+      showHome={true}
+      retryText="Reload Inbox"
+    >
+      <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
       {/* Header */}
       <header className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
@@ -1283,6 +1294,7 @@ export default function InboxPage({ params }: InboxPageProps) {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

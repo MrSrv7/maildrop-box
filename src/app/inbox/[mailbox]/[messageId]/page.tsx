@@ -7,6 +7,7 @@ import { GET_MESSAGE, MessageData } from '@/lib/graphql-queries';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { Button } from '@/components/base/button';
 import { SkeletonText } from '@/components/base/skeleton-loader';
+import { ErrorBoundary } from '@/components/base/error-boundary';
 import { useRouter } from 'next/navigation';
 
 interface MessagePageProps {
@@ -118,7 +119,18 @@ export default function MessagePage({ params }: MessagePageProps) {
   };
 
   return (
-    <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
+    <ErrorBoundary
+      variant="card"
+      size="lg"
+      errorIcon={Mail}
+      errorTitle="Message Error"
+      errorMessage="Unable to load the message. Please try going back to the inbox or refreshing the page."
+      showRetry={true}
+      showHome={true}
+      retryText="Reload Message"
+      homeText="Back to Inbox"
+    >
+      <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
       {/* Header */}
       <header className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
@@ -287,6 +299,7 @@ export default function MessagePage({ params }: MessagePageProps) {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
