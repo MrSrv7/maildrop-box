@@ -2,9 +2,9 @@
 
 import { useState, use, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { Mail, RefreshCw, Trash2, Plus, Copy, ArrowLeft } from 'lucide-react';
+import { Mail, RefreshCw, Trash2, Plus, Copy } from 'lucide-react';
 import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, MessageData } from '@/lib/graphql-queries';
-import { ThemeToggle } from '@/components/app/theme-toggle';
+import { Header } from '@/components/layout/header';
 import { Button, Input, LoadingSpinner, SkeletonCard, SkeletonText, ErrorBoundary, Modal } from '@/components';
 import { useRouter } from 'next/navigation';
 
@@ -41,15 +41,23 @@ export default function InboxPage({ params }: InboxPageProps) {
   const [displayedEmails, setDisplayedEmails] = useState<EmailMessage[]>([]);
   const lastFetchRef = useRef<EmailMessage[]>([]);
   const isInitializedRef = useRef(false);
+  
+  // Client-side flag for hydration safety
+  const [isClient, setIsClient] = useState(false);
 
   // Local storage key
   const MAILBOXES_STORAGE_KEY = 'maildrop-mailboxes';
   const MAX_MAILBOXES = 10;
 
+  // Set client-side flag
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Initialize mailboxes from localStorage only once on mount
   useEffect(() => {
     // Only run on client side and only once
-    if (typeof window === 'undefined' || isInitializedRef.current) return;
+    if (!isClient || isInitializedRef.current) return;
     
     isInitializedRef.current = true;
     const currentMailbox = resolvedParams.mailbox || 'example';
@@ -83,7 +91,7 @@ export default function InboxPage({ params }: InboxPageProps) {
     console.log('🆕 No saved data, initializing with:', initialMailboxes);
     setMailboxes(initialMailboxes);
     localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(initialMailboxes));
-  }, [resolvedParams.mailbox]);
+  }, [resolvedParams.mailbox, isClient]);
 
   // Add current mailbox to the list if it's not already there (when navigating to a new mailbox via URL)
   useEffect(() => {
@@ -283,12 +291,14 @@ export default function InboxPage({ params }: InboxPageProps) {
   };
 
   const handleAddMailbox = () => {
+    if (!isClient) return;
     const trimmedMailbox = newMailbox.trim();
     console.log('➕ Adding new mailbox:', trimmedMailbox, 'Current mailboxes:', mailboxes);
     if (trimmedMailbox && !mailboxes.includes(trimmedMailbox) && mailboxes.length < MAX_MAILBOXES) {
       const updatedMailboxes = [trimmedMailbox, ...mailboxes];
       console.log('📝 Updated mailboxes will be:', updatedMailboxes);
       setMailboxes(updatedMailboxes);
+      localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(updatedMailboxes));
       setNewMailbox('');
       setShowAddForm(false);
       
@@ -312,10 +322,11 @@ export default function InboxPage({ params }: InboxPageProps) {
   };
 
   const confirmDeleteAccount = () => {
-    if (!accountToDelete) return;
+    if (!accountToDelete || !isClient) return;
     
     const updatedMailboxes = mailboxes.filter(mb => mb !== accountToDelete);
     setMailboxes(updatedMailboxes);
+    localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(updatedMailboxes));
     
     // If the deleted mailbox was the current one, switch to the first available
     if (accountToDelete === selectedMailbox && updatedMailboxes.length > 0) {
@@ -477,48 +488,11 @@ export default function InboxPage({ params }: InboxPageProps) {
     >
       <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
       {/* Header */}
-      <header className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          {/* Mobile back button */}
-          {selectedMessage && (
-            <Button
-              onClick={() => setSelectedMessage(null)}
-              variant="ghost"
-              icon={ArrowLeft}
-              size="icon-sm"
-              className="md:hidden"
-              title="Back to inbox"
-            />
-          )}
-          
-          <button
-            onClick={() => router.push('/')}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            title="Go to homepage"
-          >
-            <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <span className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Maildrop Box
-            </span>
-          </button>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* Mobile Account Switcher */}
-          <div className="md:hidden">
-            <Button
-              onClick={() => setShowMobileAccountModal(true)}
-              variant="primary"
-              size="icon-sm"
-              className="w-8 h-8 rounded-full text-sm font-medium"
-              title="Switch account"
-            >
-              {selectedMailbox.charAt(0).toUpperCase()}
-            </Button>
-          </div>
-          
-          <ThemeToggle />
-        </div>
-      </header>
+      <Header 
+        variant="mailbox"
+        selectedMailbox={selectedMailbox}
+        onShowMobileAccountModal={() => setShowMobileAccountModal(true)}
+      />
 
       {/* Three Panel Layout */}
       <div className="flex-1 flex overflow-hidden">

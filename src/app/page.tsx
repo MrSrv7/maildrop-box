@@ -1,11 +1,11 @@
 'use client'
 
-import { ThemeToggle } from "@/components/app/theme-toggle";
+import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/app/footer";
 import { TypewriterSection } from "@/components/app/typewriter-section";
 import { Button } from "@/components/base/button";
 import { Input } from "@/components/base/input";
-import { Mail, Clipboard, ArrowRight, Zap, Shield, Eye, Monitor } from "lucide-react";
+import { Clipboard, ArrowRight, Zap, Shield, Eye, Monitor } from "lucide-react";
 import { useState } from "react";
 
 export default function Home() {
@@ -52,15 +52,7 @@ export default function Home() {
   return (
     <div className="font-sans min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="flex justify-between items-center px-4 sm:px-6 py-4">
-        <div className="flex items-center gap-2">
-          <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <span className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Maildrop Box
-          </span>
-        </div>
-        <ThemeToggle />
-      </header>
+      <Header variant="default" />
       
       {/* Hero Section */}
       <main className="flex items-center justify-center px-4 sm:px-6 py-8 pb-2">

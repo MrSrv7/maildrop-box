@@ -1,11 +1,11 @@
 'use client'
 
-import { use } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
-import { Mail, ArrowLeft, Trash2 } from 'lucide-react';
+import { Mail, Trash2, Copy, Plus } from 'lucide-react';
 import { GET_MESSAGE, MessageData } from '@/lib/graphql-queries';
-import { ThemeToggle } from '@/components/app/theme-toggle';
-import { Button } from '@/components/base/button';
+import { Header } from '@/components/layout/header';
+import { Input, Modal } from '@/components/base';
 import { SkeletonText } from '@/components/base/skeleton-loader';
 import { ErrorBoundary } from '@/components/base/error-boundary';
 import { useRouter } from 'next/navigation';
@@ -21,6 +21,84 @@ export default function MessagePage({ params }: MessagePageProps) {
   const resolvedParams = use(params);
   const router = useRouter();
   const { mailbox, messageId } = resolvedParams;
+
+  // Mobile account selector state
+  const [showMobileAccountModal, setShowMobileAccountModal] = useState(false);
+  const [mailboxes, setMailboxes] = useState<string[]>([mailbox]);
+  const [newMailbox, setNewMailbox] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Local storage key
+  const MAILBOXES_STORAGE_KEY = 'maildrop-mailboxes';
+  const MAX_MAILBOXES = 10;
+
+  // Set client-side flag
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Initialize mailboxes from localStorage only on client side
+  useEffect(() => {
+    if (!isClient) return;
+    
+    try {
+      const savedMailboxes = localStorage.getItem(MAILBOXES_STORAGE_KEY);
+      if (savedMailboxes) {
+        const parsed = JSON.parse(savedMailboxes);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (!parsed.includes(mailbox)) {
+            const updatedMailboxes = [mailbox, ...parsed].slice(0, MAX_MAILBOXES);
+            setMailboxes(updatedMailboxes);
+            localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(updatedMailboxes));
+          } else {
+            setMailboxes(parsed);
+          }
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing saved mailboxes:', error);
+    }
+    
+    // If no valid saved data, initialize with current mailbox
+    const initialMailboxes = [mailbox];
+    setMailboxes(initialMailboxes);
+    localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(initialMailboxes));
+  }, [mailbox, isClient]);
+
+  // Mailbox management functions
+  const handleSelectMailbox = (selectedMailbox: string) => {
+    router.push(`/inbox/${selectedMailbox}`);
+  };
+
+  const handleCopyEmail = async (mailboxName: string) => {
+    try {
+      await navigator.clipboard.writeText(`${mailboxName}@maildrop.cc`);
+    } catch (err) {
+      console.error('Failed to copy email: ', err);
+    }
+  };
+
+  const handleAddMailbox = () => {
+    if (!isClient) return;
+    if (newMailbox.trim() && !mailboxes.includes(newMailbox.trim()) && mailboxes.length < MAX_MAILBOXES) {
+      const updatedMailboxes = [newMailbox.trim(), ...mailboxes].slice(0, MAX_MAILBOXES);
+      setMailboxes(updatedMailboxes);
+      localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(updatedMailboxes));
+      setNewMailbox('');
+      setShowAddForm(false);
+    }
+  };
+
+  const handleDeleteAccount = (mailboxToDelete: string) => {
+    if (!isClient) return;
+    if (mailboxes.length > 1) {
+      const updatedMailboxes = mailboxes.filter(mb => mb !== mailboxToDelete);
+      setMailboxes(updatedMailboxes);
+      localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(updatedMailboxes));
+    }
+  };
 
   // Query for message data
   const { data: messageData, loading: messageLoading, error: messageError } = useQuery<MessageData>(
@@ -50,7 +128,9 @@ export default function MessagePage({ params }: MessagePageProps) {
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleString();
+      const date = new Date(dateString);
+      // Use consistent formatting to avoid hydration mismatches
+      return date.toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
     } catch {
       return dateString;
     }
@@ -112,12 +192,6 @@ export default function MessagePage({ params }: MessagePageProps) {
   const message = messageData?.message;
   const senderInfo = message ? parseHeaderFrom(message.headerfrom) : null;
 
-  const truncateSubject = (subject: string, maxLength: number = 6) => {
-    if (!subject) return 'Message';
-    if (subject.length <= maxLength) return subject;
-    return subject.substring(0, maxLength) + '...';
-  };
-
   return (
     <ErrorBoundary
       variant="card"
@@ -132,51 +206,16 @@ export default function MessagePage({ params }: MessagePageProps) {
     >
       <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
       {/* Header */}
-      <header className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          {/* Back button */}
-          <Button
-            onClick={() => router.push(`/inbox/${mailbox}`)}
-            variant="ghost"
-            icon={ArrowLeft}
-            size="icon-sm"
-            title="Back to inbox"
-          />
-          
-          <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <span className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Maildrop Box
-          </span>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <ThemeToggle />
-        </div>
-      </header>
-
-      {/* Breadcrumbs */}
-      <div className="px-4 sm:px-6 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <Button
-            onClick={() => router.push('/')}
-            variant="link"
-            size="sm"
-          >
-            Home
-          </Button>
-          <span>/</span>
-          <Button
-            onClick={() => router.push(`/inbox/${mailbox}`)}
-            variant="link"
-            size="sm"
-          >
-            {mailbox}@maildrop.cc
-          </Button>
-          <span>/</span>
-          <span className="text-gray-900 dark:text-gray-100">
-            {truncateSubject(message?.subject || '')}
-          </span>
-        </div>
-      </div>
+      <Header 
+        variant="mailbox"
+        mailbox={mailbox}
+        messageSubject={message?.subject}
+        selectedMailbox={mailbox}
+        onShowMobileAccountModal={() => setShowMobileAccountModal(true)}
+        showBackButton={true}
+        showBreadcrumbs={true}
+        onBack={() => router.push(`/inbox/${mailbox}`)}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
@@ -299,6 +338,137 @@ export default function MessagePage({ params }: MessagePageProps) {
           </div>
         )}
       </div>
+      
+      {/* Mobile Account Modal */}
+      <Modal
+        isOpen={showMobileAccountModal}
+        onClose={() => setShowMobileAccountModal(false)}
+        title="Switch Account"
+        size="md"
+      >
+        <div className="space-y-4">
+          {/* Accounts List */}
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {mailboxes.map((mailboxName) => (
+              <div
+                key={mailboxName}
+                className={`flex items-center w-full rounded-lg p-2 transition-colors ${
+                  mailbox === mailboxName
+                    ? 'bg-blue-100 dark:bg-blue-900/30'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                {/* Avatar */}
+                <div className="p-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ${
+                    mailbox === mailboxName ? 'bg-blue-600' : 'bg-gray-500'
+                  }`}>
+                    {mailboxName.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+                
+                {/* Account Info */}
+                <button
+                  onClick={() => {
+                    handleSelectMailbox(mailboxName);
+                    setShowMobileAccountModal(false);
+                  }}
+                  className={`flex-1 text-left p-3 transition-colors ${
+                    mailbox === mailboxName
+                      ? 'text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <div className="font-medium break-all leading-tight">
+                    {mailboxName}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    @maildrop.cc
+                  </div>
+                </button>
+                
+                {/* Actions */}
+                <div className="flex items-center gap-1 p-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyEmail(mailboxName);
+                    }}
+                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                    title="Copy email"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                  
+                  {mailboxes.length > 1 && (
+                    <button
+                      onClick={() => {
+                        handleDeleteAccount(mailboxName);
+                        if (mailboxes.length === 1) {
+                          setShowMobileAccountModal(false);
+                        }
+                      }}
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                      title="Delete account"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Add New Account Section */}
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          {showAddForm ? (
+            <div className="space-y-3">
+              <Input
+                type="text"
+                placeholder="Enter username..."
+                value={newMailbox}
+                onChange={(e) => setNewMailbox(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddMailbox()}
+                autoFocus
+                fullWidth
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddMailbox}
+                  disabled={!newMailbox.trim() || mailboxes.includes(newMailbox.trim()) || mailboxes.length >= MAX_MAILBOXES}
+                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add Account
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewMailbox('');
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAddForm(true)}
+              disabled={mailboxes.length >= MAX_MAILBOXES}
+              className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-5 h-5" />
+              {mailboxes.length >= MAX_MAILBOXES ? 'Maximum accounts reached' : 'Add New Account'}
+            </button>
+          )}
+          {mailboxes.length >= MAX_MAILBOXES && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+              You can have up to {MAX_MAILBOXES} accounts
+            </p>
+          )}
+        </div>
+      </Modal>
       </div>
     </ErrorBoundary>
   );

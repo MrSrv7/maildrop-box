@@ -1,6 +1,6 @@
 'use client'
 
-import { ThemeToggle } from "@/components/app/theme-toggle";
+import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/app/footer";
 import { Button } from "@/components/base/button";
 import { Mail, Home, MailX, ArrowLeft } from "lucide-react";
@@ -10,21 +10,39 @@ export default function NotFound() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900 flex flex-col">
       {/* Header */}
-      <header className="flex justify-between items-center px-4 sm:px-6 py-4">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <span className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Maildrop Box
-          </span>
-        </Link>
-        <ThemeToggle />
-      </header>
+      <Header variant="default" />
 
       {/* Main content */}
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="max-w-2xl mx-auto text-center">
-          {/* Email icon, 404, and title in same row */}
-          <div className="flex items-center justify-center gap-8 mb-8">
+          {/* Mobile Layout: Icon and 404 in first row, Mail Unavailable in second row */}
+          <div className="block sm:hidden mb-8">
+            {/* First row: Icon and 404 */}
+            <div className="flex items-center justify-center gap-6 mb-4">
+              {/* Email icon with error state */}
+              <div className="relative">
+                <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                  <MailX className="w-10 h-10 text-red-500 dark:text-red-400" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">!</span>
+                </div>
+              </div>
+
+              {/* 404 Title */}
+              <h1 className="text-5xl font-bold text-gray-900 dark:text-gray-100">
+                404
+              </h1>
+            </div>
+
+            {/* Second row: Mail Unavailable */}
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+              Mail Unavailable
+            </h2>
+          </div>
+
+          {/* Desktop Layout: All in one row */}
+          <div className="hidden sm:flex items-center justify-center gap-8 mb-8">
             {/* Email icon with error state */}
             <div className="relative">
               <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
@@ -59,14 +77,16 @@ export default function NotFound() {
                 <p><strong>Subject:</strong> Delivery Status Notification (Failure)</p>
                 <p><strong>To:</strong> lost-visitor@maildrop.cc</p>
                 <hr className="border-gray-200 dark:border-gray-600" />
-                <p className="mt-3">
+                <p className="my-2">
                   The page you requested could not be delivered to its destination. 
                   It seems like this URL has wandered off into the digital void, 
                   much like emails in a spam folder.
                 </p>
-                <p className="text-red-600 dark:text-red-400 font-mono text-xs mt-2">
-                  ERROR 404: Page not found in mailbox
-                </p>
+                <div className="pt-2">
+                  <p className="text-red-600 dark:text-red-400 font-mono text-xs">
+                    ERROR 404: Page not found in mailbox
+                  </p>
+                </div>
               </div>
             </div>
           </div>
