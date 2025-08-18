@@ -200,8 +200,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const hasLeftIcon = Boolean(LeftIcon) || loading
     const hasRightIcon = Boolean(RightIcon) && !loading
     
-    // Generate unique ID if not provided
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`
+    // Use React's useId hook or a static ID instead of Math.random()
+    // This ensures consistent IDs between server and client rendering
+    const inputId = id || `input-field-${props.name || 'default'}`
     
     // Combine input classes
     const inputClasses = [

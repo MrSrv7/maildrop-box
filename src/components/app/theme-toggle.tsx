@@ -1,20 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useTheme } from 'next-themes'
+import React, { memo } from 'react'
 import { Sun, Moon, Monitor, Check } from 'lucide-react'
-
-/**
- * ThemeOption represents a single theme configuration
- */
-interface ThemeOption {
-  /** The theme identifier used by next-themes */
-  value: string
-  /** Display label for the theme option */
-  label: string
-  /** Icon component representing the theme */
-  icon: React.ComponentType<{ className?: string }>
-}
+import { useThemeToggle, ThemeOption } from '@/hooks/useThemeToggle'
 
 /**
  * Available theme options with their configurations
@@ -37,103 +25,23 @@ const THEME_OPTIONS: ThemeOption[] = [
   },
 ]
 
-export const ThemeToggle = React.memo(() => {
-  const { theme, setTheme } = useTheme()
-  const [isOpen, setIsOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const buttonRef = useRef<HTMLButtonElement>(null)
-
-  // Handle hydration
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Find current theme option - use resolvedTheme for better detection
-  const currentTheme = THEME_OPTIONS.find(option => option.value === theme) || THEME_OPTIONS[2]
-  const CurrentIcon = currentTheme.icon
-
-  // Handle theme selection
-  const handleThemeSelect = useCallback((selectedTheme: string) => {
-    setTheme(selectedTheme)
-    setIsOpen(false)
-    setActiveIndex(0)
-    
-    // Return focus to button after selection
-    setTimeout(() => {
-      buttonRef.current?.focus()
-    }, 0)
-  }, [setTheme])
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false)
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isOpen])
-
-  // Handle keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isOpen) return
-
-      switch (event.key) {
-        case 'Escape':
-          setIsOpen(false)
-          buttonRef.current?.focus()
-          break
-        case 'ArrowDown':
-          event.preventDefault()
-          setActiveIndex(prev => (prev + 1) % THEME_OPTIONS.length)
-          break
-        case 'ArrowUp':
-          event.preventDefault()
-          setActiveIndex(prev => (prev - 1 + THEME_OPTIONS.length) % THEME_OPTIONS.length)
-          break
-        case 'Enter':
-        case ' ':
-          event.preventDefault()
-          handleThemeSelect(THEME_OPTIONS[activeIndex].value)
-          break
-        case 'Home':
-          event.preventDefault()
-          setActiveIndex(0)
-          break
-        case 'End':
-          event.preventDefault()
-          setActiveIndex(THEME_OPTIONS.length - 1)
-          break
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-      return () => document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, activeIndex, handleThemeSelect])
-
-  // Toggle dropdown
-  const handleToggle = () => {
-    setIsOpen(prev => !prev)
-    if (!isOpen) {
-      // Set active index to current theme when opening
-      const currentIndex = THEME_OPTIONS.findIndex(option => option.value === theme)
-      setActiveIndex(currentIndex >= 0 ? currentIndex : 2) // Default to system (index 2)
-    }
-  }
+/**
+ * Improved Theme Toggle component with enhanced accessibility and animations
+ */
+export const ThemeToggle = memo(() => {
+  const {
+    theme,
+    currentTheme,
+    isOpen,
+    mounted,
+    activeIndex,
+    dropdownRef,
+    buttonRef,
+    handleToggle,
+    handleThemeSelect,
+  } = useThemeToggle(THEME_OPTIONS);
+  
+  const CurrentIcon = currentTheme.icon;
 
   // Prevent hydration mismatch
   if (!mounted) {
@@ -147,7 +55,7 @@ export const ThemeToggle = React.memo(() => {
           <Monitor className="h-6 w-6 text-gray-500 dark:text-gray-400" />
         </button>
       </div>
-    )
+    );
   }
 
   return (
@@ -173,7 +81,7 @@ export const ThemeToggle = React.memo(() => {
         />
       </button>
 
-      {/* Dropdown menu */}
+      {/* Dropdown menu with improved a11y */}
       {isOpen && (
         <div
           ref={dropdownRef}
@@ -183,9 +91,9 @@ export const ThemeToggle = React.memo(() => {
         >
           <div className="rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-800">
             {THEME_OPTIONS.map((option, index) => {
-              const Icon = option.icon
-              const isSelected = option.value === theme
-              const isActive = index === activeIndex
+              const Icon = option.icon;
+              const isSelected = option.value === theme;
+              const isActive = index === activeIndex;
 
               return (
                 <button
@@ -220,12 +128,12 @@ export const ThemeToggle = React.memo(() => {
         </div>
       )}
     </div>
-  )
-})
+  );
+});
 
-ThemeToggle.displayName = 'ThemeToggle'
+ThemeToggle.displayName = 'ThemeToggle';
 
 /**
  * Export for easier imports
  */
-export default ThemeToggle
+export default ThemeToggle;
