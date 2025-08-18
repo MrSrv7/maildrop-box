@@ -2,10 +2,10 @@
 
 import { useState, use, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { Mail, RefreshCw, Trash2, Plus, Copy } from 'lucide-react';
+import { Mail, RefreshCw, Trash2, Copy } from 'lucide-react';
 import { GET_INBOX, DELETE_MESSAGE, GET_MESSAGE, EmailMessage, InboxData, MessageData } from '@/lib/graphql-queries';
-import { Header } from '@/components/layout';
-import { Button, Input, LoadingSpinner, SkeletonCard, SkeletonText, ErrorBoundary, Modal } from '@/components';
+import { Header, Sidebar, MobileSidebar } from '@/components/layout';
+import { Button, LoadingSpinner, SkeletonCard, SkeletonText, ErrorBoundary, Modal } from '@/components';
 import { useRouter } from 'next/navigation';
 
 interface InboxPageProps {
@@ -290,17 +290,15 @@ export default function InboxPage({ params }: InboxPageProps) {
     setCancelDeletion(true);
   };
 
-  const handleAddMailbox = () => {
+  const handleAddMailbox = (mailboxName: string) => {
     if (!isClient) return;
-    const trimmedMailbox = newMailbox.trim();
+    const trimmedMailbox = mailboxName.trim();
     console.log('➕ Adding new mailbox:', trimmedMailbox, 'Current mailboxes:', mailboxes);
     if (trimmedMailbox && !mailboxes.includes(trimmedMailbox) && mailboxes.length < MAX_MAILBOXES) {
       const updatedMailboxes = [trimmedMailbox, ...mailboxes];
       console.log('📝 Updated mailboxes will be:', updatedMailboxes);
       setMailboxes(updatedMailboxes);
       localStorage.setItem(MAILBOXES_STORAGE_KEY, JSON.stringify(updatedMailboxes));
-      setNewMailbox('');
-      setShowAddForm(false);
       
       // Navigate to the new mailbox immediately
       router.push(`/inbox/${trimmedMailbox}`);
@@ -497,115 +495,15 @@ export default function InboxPage({ params }: InboxPageProps) {
       {/* Three Panel Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Mailboxes */}
-        <div className="w-80 md:flex hidden border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-col">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Accounts</h2>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-2">
-              {mailboxes.map((mailbox) => (
-                <div
-                  key={mailbox}
-                  className={`flex items-start w-full rounded-lg mb-2 transition-colors ${
-                    selectedMailbox === mailbox
-                      ? 'bg-blue-100 dark:bg-blue-900/30'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <button
-                    onClick={() => handleSelectMailbox(mailbox)}
-                    className={`flex-1 text-left p-3 transition-colors ${
-                      selectedMailbox === mailbox
-                        ? 'text-blue-700 dark:text-blue-300'
-                        : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    <div className="font-medium break-all leading-tight max-w-full">
-                      {mailbox}
-                    </div>
-                  </button>
-                  
-                  {/* Copy email button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopyEmail(mailbox);
-                    }}
-                    className="p-2 m-1 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors flex-shrink-0 self-start"
-                    title="Copy email address"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                  
-                  {/* Delete account button */}
-                  <button
-                    onClick={() => handleDeleteAccount(mailbox)}
-                    className="p-2 m-1 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors flex-shrink-0 self-start"
-                    title="Remove account"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Add New Mailbox */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            {showAddForm ? (
-              <div className="space-y-2">
-                <Input
-                  type="text"
-                  placeholder="Enter username..."
-                  value={newMailbox}
-                  onChange={(e) => setNewMailbox(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddMailbox()}
-                  autoFocus
-                  fullWidth
-                />
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleAddMailbox}
-                    disabled={!newMailbox.trim() || mailboxes.includes(newMailbox.trim()) || mailboxes.length >= MAX_MAILBOXES}
-                    variant="primary"
-                    size="sm"
-                    fullWidth
-                  >
-                    Add
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowAddForm(false);
-                      setNewMailbox('');
-                    }}
-                    variant="outline"
-                    size="sm"
-                    fullWidth
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                onClick={() => setShowAddForm(true)}
-                disabled={mailboxes.length >= MAX_MAILBOXES}
-                variant="ghost"
-                leftIcon={Plus}
-                fullWidth
-                className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
-              >
-                {mailboxes.length >= MAX_MAILBOXES ? 'Maximum accounts reached' : 'Add New Address'}
-              </Button>
-            )}
-            {mailboxes.length >= MAX_MAILBOXES && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                You can have up to {MAX_MAILBOXES} accounts
-              </p>
-            )}
-          </div>
-        </div>
+        <Sidebar 
+          selectedMailbox={selectedMailbox}
+          mailboxes={mailboxes}
+          maxMailboxes={MAX_MAILBOXES}
+          onSelectMailbox={handleSelectMailbox}
+          onDeleteMailbox={handleDeleteAccount}
+          onAddMailbox={handleAddMailbox}
+          onCopyEmail={handleCopyEmail}
+        />
 
         {/* Middle Panel - Email List */}
         <div className="w-96 md:flex hidden border-r border-gray-200 dark:border-gray-700 flex-col">
@@ -955,135 +853,21 @@ export default function InboxPage({ params }: InboxPageProps) {
       </div>
 
       {/* Mobile Account Switcher Modal */}
-      <Modal
+      <MobileSidebar
         isOpen={showMobileAccountModal}
         onClose={() => setShowMobileAccountModal(false)}
-        title="Switch Account"
-        size="md"
-        className="max-w-md"
-      >
-        <div className="max-h-96 overflow-y-auto">
-          <div className="space-y-2">
-            {mailboxes.map((mailbox) => (
-              <div
-                key={mailbox}
-                className={`flex items-center rounded-lg border transition-colors ${
-                  selectedMailbox === mailbox
-                    ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700'
-                    : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
-                }`}
-              >
-                {/* Avatar */}
-                <div className="p-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ${
-                    selectedMailbox === mailbox ? 'bg-blue-600' : 'bg-gray-500'
-                  }`}>
-                    {mailbox.charAt(0).toUpperCase()}
-                  </div>
-                </div>
-                
-                {/* Account Info */}
-                <button
-                  onClick={() => {
-                    handleSelectMailbox(mailbox);
-                    setShowMobileAccountModal(false);
-                  }}
-                  className={`flex-1 text-left p-3 transition-colors ${
-                    selectedMailbox === mailbox
-                      ? 'text-blue-700 dark:text-blue-300'
-                      : 'text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  <div className="font-medium break-all leading-tight">
-                    {mailbox}
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    @maildrop.cc
-                  </div>
-                </button>
-                
-                {/* Actions */}
-                <div className="flex items-center gap-1 p-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopyEmail(mailbox);
-                    }}
-                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                    title="Copy email"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                  
-                  {mailboxes.length > 1 && (
-                    <button
-                      onClick={() => {
-                        handleDeleteAccount(mailbox);
-                        if (mailboxes.length === 1) {
-                          setShowMobileAccountModal(false);
-                        }
-                      }}
-                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                      title="Delete account"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Add New Account Section */}
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          {showAddForm ? (
-            <div className="space-y-3">
-              <Input
-                type="text"
-                placeholder="Enter username..."
-                value={newMailbox}
-                onChange={(e) => setNewMailbox(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddMailbox()}
-                autoFocus
-                fullWidth
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={handleAddMailbox}
-                  disabled={!newMailbox.trim() || mailboxes.includes(newMailbox.trim()) || mailboxes.length >= MAX_MAILBOXES}
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Add Account
-                </button>
-                <button
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setNewMailbox('');
-                  }}
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowAddForm(true)}
-              disabled={mailboxes.length >= MAX_MAILBOXES}
-              className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Plus className="w-5 h-5" />
-              {mailboxes.length >= MAX_MAILBOXES ? 'Maximum accounts reached' : 'Add New Account'}
-            </button>
-          )}
-          {mailboxes.length >= MAX_MAILBOXES && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-              You can have up to {MAX_MAILBOXES} accounts
-            </p>
-          )}
-        </div>
-      </Modal>
+        selectedMailbox={selectedMailbox}
+        mailboxes={mailboxes}
+        maxMailboxes={MAX_MAILBOXES}
+        newMailbox={newMailbox}
+        onNewMailboxChange={(value) => setNewMailbox(value)}
+        showAddForm={showAddForm}
+        onShowAddFormChange={(show) => setShowAddForm(show)}
+        onSelectMailbox={handleSelectMailbox}
+        onDeleteMailbox={handleDeleteAccount}
+        onAddMailbox={handleAddMailbox}
+        onCopyEmail={handleCopyEmail}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Modal
