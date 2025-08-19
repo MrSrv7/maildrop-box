@@ -282,7 +282,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
                 {showCloseButton && (
                   <Button
                     variant="ghost"
-                    size="icon-sm"
+                    size="icon"
                     icon={X}
                     onClick={onClose}
                     aria-label="Close modal"

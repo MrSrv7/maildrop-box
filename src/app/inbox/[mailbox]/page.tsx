@@ -566,7 +566,16 @@ export default function InboxPage({ params }: InboxPageProps) {
             ) : !displayedEmails?.length ? (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                 {inboxLoading ? (
-                  <LoadingSpinner text="Loading messages..." />
+                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {Array.from({ length: 5 }, (_, index) => (
+                      <SkeletonCard
+                        key={index}
+                        titleLines={1}
+                        contentLines={3}
+                        className="border-0 rounded-none"
+                      />
+                    ))}
+                  </div>
                 ) : (
                   'No messages in this inbox'
                 )}

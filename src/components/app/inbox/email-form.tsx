@@ -60,10 +60,17 @@ export const EmailForm: React.FC<EmailFormProps> = ({
   };
 
   return (
-    <div className={`max-w-lg mx-auto px-4 ${className}`}>
+    <form
+      className={`max-w-lg mx-auto px-4 ${className}`}
+      onSubmit={e => {
+        e.preventDefault();
+        if (!error && email.length > 0) handleSubmit();
+      }}
+      autoComplete="off"
+    >
       {/* Desktop Layout */}
       <div className="hidden sm:block">
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-2">
           <Input
             type="text"
             placeholder="Enter or paste email address..."
@@ -72,49 +79,58 @@ export const EmailForm: React.FC<EmailFormProps> = ({
             variant={error ? "error" : "default"}
             error={error}
             fullWidth
-            className="flex-1"
+            className="w-full"
           />
-          <Button
-            onClick={handlePaste}
-            variant="ghost"
-            icon={Clipboard}
-            size="icon"
-            title="Paste from clipboard"
-          />
-          <Button
-            onClick={handleSubmit}
-            variant="primary"
-            icon={ArrowRight}
-            size="icon"
-          />
+          <div className="flex gap-2 justify-center mt-3 mb-2">
+            <Button
+              type="button"
+              onClick={handlePaste}
+              variant="ghost"
+              icon={Clipboard}
+              size="icon"
+              title="Paste from clipboard"
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              icon={ArrowRight}
+              size="icon"
+              disabled={!!error || !email.length}
+            />
+          </div>
         </div>
       </div>
 
       {/* Mobile Layout */}
       <div className="sm:hidden space-y-3">
-        <Input
-          type="text"
-          placeholder="Enter or paste email address..."
-          value={email}
-          onChange={handleInputChange}
-          variant={error ? "error" : "default"}
-          error={error}
-          fullWidth
-        />
-        <div className="flex gap-2 justify-center">
-          <Button
-            onClick={handlePaste}
-            variant="outline"
-            icon={Clipboard}
-            size="icon"
-            title="Paste from clipboard"
+        <div className="flex flex-col gap-2">
+          <Input
+            type="text"
+            placeholder="Enter or paste email address..."
+            value={email}
+            onChange={handleInputChange}
+            variant={error ? "error" : "default"}
+            error={error}
+            fullWidth
+            className="w-full"
           />
-          <Button
-            onClick={handleSubmit}
-            variant="primary"
-            icon={ArrowRight}
-            size="icon"
-          />
+          <div className="flex gap-2 justify-center mt-3 mb-2">
+            <Button
+              type="button"
+              onClick={handlePaste}
+              variant="outline"
+              icon={Clipboard}
+              size="icon"
+              title="Paste from clipboard"
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              icon={ArrowRight}
+              size="icon"
+              disabled={!!error || !email.length}
+            />
+          </div>
         </div>
       </div>
 
@@ -122,7 +138,7 @@ export const EmailForm: React.FC<EmailFormProps> = ({
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 px-2">
         {helperText}
       </p>
-    </div>
+    </form>
   );
 };
 

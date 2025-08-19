@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Copy, Plus, Trash2 } from 'lucide-react';
-import { Button, Input } from '@/components/base';
+import { Button } from '@/components/base';
+import { EmailForm } from '@/components/app/inbox/email-form';
 
 export interface SidebarProps {
   /**
@@ -124,14 +125,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         {showAddForm ? (
           <div className="space-y-2">
-            <Input
-              type="text"
-              placeholder="Enter username..."
-              value={newMailbox}
-              onChange={(e) => setNewMailbox(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddMailbox()}
-              autoFocus
-              fullWidth
+            <EmailForm
+              onSubmit={username => {
+                setNewMailbox(username);
+                handleAddMailbox();
+              }}
+              helperText={`Enter a username (e.g. "example") or a full email address ending in @maildrop.cc`}
+              className="mb-2"
             />
             <div className="flex gap-2">
               <Button

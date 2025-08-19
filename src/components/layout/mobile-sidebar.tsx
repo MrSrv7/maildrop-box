@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Copy, Plus, Trash2 } from 'lucide-react';
-import { Modal, Input } from '@/components/base';
+import { Modal } from '@/components/base';
+import { EmailForm } from '@/components/app/inbox/email-form';
 
 export interface MobileSidebarProps {
   /**
@@ -174,14 +175,13 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         {showAddForm ? (
           <div className="space-y-3">
-            <Input
-              type="text"
-              placeholder="Enter username..."
-              value={newMailbox}
-              onChange={(e) => onNewMailboxChange(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && onAddMailbox(newMailbox)}
-              autoFocus
-              fullWidth
+            <EmailForm
+              onSubmit={username => {
+                onNewMailboxChange(username);
+                onAddMailbox(username);
+              }}
+              helperText={`Enter a username (e.g. "example") or a full email address ending in @maildrop.cc`}
+              className="mb-2"
             />
             <div className="flex gap-2">
               <button
