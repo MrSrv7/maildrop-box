@@ -5,7 +5,7 @@ import Input, { InputProps } from "./input";
 
 export interface EmailInputProps extends Omit<InputProps, "type"> {
   value: string;
-  onChange: (value: string) => void;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
   onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   autoFocus?: boolean;
   placeholder?: string;
@@ -22,8 +22,8 @@ const EmailInput: React.FC<EmailInputProps> = ({
   <Input
     type="text"
     value={value}
-    onChange={e => onChange(e.target.value)}
-    onKeyPress={onKeyPress}
+    onChange={e => onChange(e)}
+    onKeyUp={onKeyPress}
     autoFocus={autoFocus}
     placeholder={placeholder}
     fullWidth
