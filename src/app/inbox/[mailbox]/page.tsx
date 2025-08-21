@@ -1007,7 +1007,7 @@ export default function InboxPage({ params }: InboxPageProps) {
       >
         <p className="text-gray-700 dark:text-gray-300">
           Are you sure you want to remove <strong>{accountToDelete}@maildrop.cc</strong> from your accounts list? 
-          This will only remove it from the UI and will NOT delete any email messages permanently. 
+          This will only remove it from the UI and will NOT delete the email account or its email messages permanently. 
           You can add it back anytime.
         </p>
       </Modal>

@@ -4,6 +4,7 @@ import React from "react";
 import { Clipboard, ArrowRight } from "lucide-react";
 
 import { Input, Button } from "@/components";
+import { LoadingSpinner } from "@/components/base/loading-spinner";
 import { useEmailForm, useClipboard } from "@/hooks";
 import { EMAIL_DOMAIN } from "@/utils";
 
@@ -38,36 +39,41 @@ export const EmailForm: React.FC<EmailFormProps> = ({
   helperText = `Enter a username (e.g. "example") or a full email address ending in @${domain}`,
   onSubmit,
   className = "",
-}) => {
-  const { email, error, handleInputChange, handleSubmit } = useEmailForm({
-    onSubmit,
-    domain,
-  });
+  }) => {
+    const { email, error, handleInputChange, handleSubmit } = useEmailForm({
+      onSubmit,
+      domain,
+    });
+    const { pasteFromClipboard } = useClipboard();
+    const [loading, setLoading] = React.useState(false);
 
-  const { pasteFromClipboard } = useClipboard();
+    /**
+     * Handle paste button click
+     */
+    const handlePaste = async () => {
+      const text = await pasteFromClipboard();
+      if (text) {
+        handleInputChange({
+          target: { value: text },
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
+    };
 
-  /**
-   * Handle paste button click
-   */
-  const handlePaste = async () => {
-    const text = await pasteFromClipboard();
-    if (text) {
-      // Directly update email state in the form hook
-      handleInputChange({
-        target: { value: text },
-      } as React.ChangeEvent<HTMLInputElement>);
-    }
-  };
+    // Wrap handleSubmit to set loading state
+    const handleFormSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!error && email.length > 0) {
+        setLoading(true);
+        await Promise.resolve(handleSubmit());
+      }
+    };
 
-  return (
-    <form
-      className={`max-w-lg mx-auto px-4 ${className}`}
-      onSubmit={e => {
-        e.preventDefault();
-        if (!error && email.length > 0) handleSubmit();
-      }}
-      autoComplete="off"
-    >
+    return (
+      <form
+        className={`max-w-lg mx-auto px-4 ${className}`}
+        onSubmit={handleFormSubmit}
+        autoComplete="off"
+      >
       {/* Desktop Layout */}
       <div className="hidden sm:block">
         <div className="flex flex-col gap-2">
@@ -89,13 +95,14 @@ export const EmailForm: React.FC<EmailFormProps> = ({
               icon={Clipboard}
               size="icon"
               title="Paste from clipboard"
+              disabled={loading}
             />
             <Button
               type="submit"
               variant="primary"
               icon={ArrowRight}
               size="icon"
-              disabled={!!error || !email.length}
+              disabled={!!error || !email.length || loading}
             />
           </div>
         </div>
@@ -122,13 +129,14 @@ export const EmailForm: React.FC<EmailFormProps> = ({
               icon={Clipboard}
               size="icon"
               title="Paste from clipboard"
+              disabled={loading}
             />
             <Button
               type="submit"
               variant="primary"
               icon={ArrowRight}
               size="icon"
-              disabled={!!error || !email.length}
+              disabled={!!error || !email.length || loading}
             />
           </div>
         </div>
@@ -137,6 +145,14 @@ export const EmailForm: React.FC<EmailFormProps> = ({
       {/* Helper Text */}
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 px-2">
         {helperText}
+        {loading && (
+          <div className="flex items-center justify-center mt-4">
+            <span className="mr-2">
+              <LoadingSpinner size="sm" variant="primary" />
+            </span>
+            <span className="text-blue-600 dark:text-blue-400 font-medium">Redirecting to your mailbox...</span>
+          </div>
+        )}
       </p>
     </form>
   );
